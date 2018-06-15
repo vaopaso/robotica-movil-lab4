@@ -1,0 +1,11 @@
+<launch>
+
+  <include file="$(find turtlebot_bringup)/launch/minimal.launch" />
+
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_kinect_frame_nav" args="-0.1 0.0 0.30 -1.570796327 0.0 1.570796327 /base_link /kinect_frame 100" />
+  <include file="$(find openni_launch)/launch/openni.launch" />
+  <node pkg="grupo_5" name="scan_fron_kinect" type="scan_from_kinect.py"/>
+
+  <include file="$(find sound_play)/soundplay_node.launch" />
+
+</launch>
