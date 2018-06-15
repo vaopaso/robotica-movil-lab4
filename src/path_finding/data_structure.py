@@ -23,6 +23,9 @@ class Node: #Cell
             # self.neighbours = np.zeros([8])
             self.neighbours = []
 
+      def __str__(self):
+            return 'Node: (i,j)=({0},{1}); (x,y)=({2}.{3})'.format(self.i, self.j, self.x, self.y)
+
 class Matrix(AStar):
       def __init__(self, cspace_matrix, width_pixels, height_pixels , bottom_left_origin, resolution):
             self.resolution = resolution
