@@ -38,7 +38,7 @@ class PathFinding:
         self.c_space(self.mapa,self.cspace_matrix, radius=radius)
 
         rospy.Subscriber('/is_located', String, self.isLocatedCallback)
-        rospy.Subscriber('/location', String, self.isLocatedCallback)
+        rospy.Subscriber('/location', String, self.locationCallback)
 
         self.isLocated = False
         self.location = None
@@ -64,7 +64,7 @@ class PathFinding:
     
     def locationCallback(self, data):
         pos = json.loads(str(data.data))
-        if pos:
+        if pos is not None:
             self.location = {'x': pos['x'], 'y': pos['y'], 'theta': pos['theta']}
         else:
             self.location = None
@@ -121,25 +121,47 @@ path_finding = PathFinding('../../include/map.pgm', bottom_left_origin, resoluti
 rospy.sleep(1)
 
 
-# rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
+rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
 # rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
 
-initial_pose = {'x':0.5,'y':1.3,'theta':0}
+
+#-----------test-------------
+start_pose = {'x':0.5,'y':1.3,'theta':0}
 goal_pose = {'x':2.1,'y':0.5,'theta':0}
-nodes = path_finding.findPath(initial_pose, goal_pose)
-if nodes:
+nodes = path_finding.findPath(start_pose, goal_pose)
+if nodes is not None:
     for i in nodes:
         print(i)
 else:
-    print('Error. nodes no valido:', nodes)
+    print('Error. nodes no valido:')
 
 path_finding.plotPathFound(nodes)
-    
+#-----------------------------
+
+
 # rospy.sleep(1)
 
 # rospy.Timer(rospy.Duration(0.3), localization.plotParticles)
 # rospy.Timer(rospy.Duration(0.3),localization.timer_located)
 
+cond_termino = False
+while True and not cond_termino:
+    if not path_finding.isLocated:
+        # Moverse hasta localizarse
+        # (Activar timer de move.controlled_tick)
+        pass
+    else:
+        # Desactivar timer de move.controlled_tick
+        if path_finding.location is not None:
+            #Hacer path finding
+            start_pose = path_finding.location
+            nodes = path_finding.findPath(start_pose, goal_pose)
+            if not bool(nodes):
+                print('Error. "nodes" no valido:', nodes)
+            else:
+                node = nodes.pop(0)
+                goals = []
+                goals.append({'x': node.x, 'y': node.y, 'theta':0 })
 
 
 rospy.spin()
