@@ -63,7 +63,8 @@ rospy.sleep(1)
 
 arista = 1
 print("hhh")
-goals_list = json.dumps([{'x': 0.2, 'y': 0, 'theta': 0},{'x': 0.2, 'y': 0, 'theta': 0},{'x': 0.2, 'y': 0, 'theta': 0}])
+move.pose_mapa = {'x':0,'y':0,'theta':0}
+goals_list = json.dumps([{'x': 0.2, 'y': 0, 'theta': 0},{'x': 0.4, 'y': 0, 'theta': 0},{'x': 0.6, 'y': 0, 'theta': 0}])
 
 goals_publisher.publish(String(goals_list))
 # print(String(goals_list))

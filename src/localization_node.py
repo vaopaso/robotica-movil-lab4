@@ -4,7 +4,7 @@ import rospy
 import time
 import cv2
 from movement.detector_obstaculo_pasillo import ObstacleDetector
-from movement.accion_mover_timers import Move
+from movement.accion_mover_timers2 import Move
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
@@ -18,7 +18,7 @@ import math
 import json
 
 
-num_particles = 500
+num_particles = 100
 rospy.init_node("localization")
 
 

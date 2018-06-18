@@ -62,11 +62,15 @@ class Localization:
 
         # bajo este score, esta ubicado.
         self.threshold_located = 0.1
-        self.min_score_weighting = 5*math.pow(10,-40)
+        self.min_score_weighting = math.pow(10,-40)
 
         #no empieza ubicando hasta que reciba particula inicial.
         self.start_locating = False
         self.initial_pose = None
+
+        self.valid_measure = True
+
+        self.avg_particle = None
 
     def initial_pose_callback(self,data):
         print("calback")
@@ -103,6 +107,8 @@ class Localization:
                 data[i,2] = particle['theta']
             avg = np.average(data,axis=0)
             avg = {'x': avg[0], 'y': avg[1], 'theta': avg[2]}
+            self.avg_particle = avg
+
 
         self.is_located_publisher.publish(String(json.dumps(is_located)))
         self.location_publisher.publish(String(json.dumps(avg)))
@@ -119,13 +125,18 @@ class Localization:
             # self.angles = np.linspace(self.init_angle,self.end_angle,self.end_angle-self.init_angle+1)
             self.particles = self.first_generation_particles(self.initial_num_particles,self.cspace_matrix,self.origin,self.resolution)
             # self.particles[-1] = {'x':0.5,'y':1.3,'theta':0}
-            self.particles[-1] = copy.deepcopy(self.initial_pose)
+            if self.avg_particle is not None:
+                self.particles[-1] = copy.deepcopy(self.avg_particle)
+            else:
+                self.particles[-1] = copy.deepcopy(self.initial_pose)
             print("hice first resampling")
         # input("hola espero")
         #weighting
         
-        sensors = np.copy(self.sensors) #se hace freeze del valor de sensors en este minuto.
+        sensors = copy.deepcopy(self.sensors) #se hace freeze del valor de sensors en este minuto.
         sensors,angles = self.get_useful_rays(sensors,self.num_particles)
+        valid_measure = copy.deepcopy(self.valid_measure)
+        print("valid measure",valid_measure)
 
         # print("sensors")
         
@@ -150,13 +161,19 @@ class Localization:
             scores.append(score)
         # print('Weighting time: {0}ms.'.format(round(1000*(time.time()-t), 2)))
 
-        if np.sum(scores)>0 and len(scores)>0 and max(scores) > self.min_score_weighting:
-            scores = scores/np.sum(scores)
-            #resampling
-            # print("resampling")
-            self.particles = self.resampling(self.num_particles,self.cspace_matrix,scores,self.particles)
-            # self.last_pose = copy.deepcopy(self.pose_robot)
+        if np.sum(scores)>0 and len(scores)>0:# and max(scores) > self.min_score_weighting:
+            print("max score",max(scores))
+            if not valid_measure or max(scores) > self.min_score_weighting:
+                scores = scores/np.sum(scores)
+                #resampling
+                # print("resampling")
+                self.particles = self.resampling(self.num_particles,self.cspace_matrix,scores,self.particles)
+                # self.last_pose = copy.deepcopy(self.pose_robot)
+            else:
+                print("mate particulas")
+                self.particles = None
         else:
+            print("mate particulas")
             self.particles = None
             # self.last_pose = copy.deepcopy(self.pose_robot)
 
@@ -209,7 +226,7 @@ class Localization:
         # print("maximo_rays",num_max_rays)
         # num_max_rays = 45
         num_min_rays = 3
-        p1 = (15,num_max_rays)
+        p1 = (20,num_max_rays)
         p2 = (300,num_min_rays)
         m = (p1[1]-p2[1])*1.0/(p1[0]-p2[0])
         num_rayos_func = lambda num_particulas: -m*p2[0]+p2[1]+m*num_particulas
@@ -236,6 +253,11 @@ class Localization:
         # ranges = np.array(data)
         zero_angle_index = ranges_orig.shape[0] //2 
         ranges = ranges_orig[zero_angle_index+self.init_angle:zero_angle_index+self.end_angle+1]
+
+        if len(ranges[ np.where( ranges > 19.0 )]) > len(ranges)*0.2:
+            self.valid_measure = False
+        else:
+            self.valid_measure = True
 
         ranges = np.add(ranges,0.08)
         # print("ranges",ranges)
@@ -347,7 +369,7 @@ class Localization:
         # print('score distance:',score)
         #interpolacion
         max_particles = self.initial_num_particles
-        min_particles = 15
+        min_particles = 20
         max_score = 3.5
         min_score = 0.1
         m = (max_particles-min_particles)/(max_score-min_score)
@@ -459,12 +481,12 @@ class Localization:
             # sigma_theta = 0.8
             # sigma_rho = 1.6
             # sigma_phi = sigma_rho/7
-            sigma_theta = 0.1 #0.3
+            sigma_theta = 0.15 #0.3
             sigma_rho = 0.05
-            sigma_phi = 0.1
+            sigma_phi = 0.05
             
             # se "mueven" las particulas segun los modelos de probabilidad
-            extra_theta = 1.1
+            extra_theta = 1
             sample_theta = np.random.normal(diff['theta']*extra_theta, sigma_theta) # giro sobre si mismo
             sample_rho = np.random.normal(rho, sigma_rho) # distancia lineal recorrida
             sample_phi = np.random.normal(phi, sigma_phi) # angulo abertura
@@ -481,7 +503,7 @@ class Localization:
                 theta -= 2*math.pi
             # print("New particle: x: {0}, y: {1}, theta: {2}".format(x,y,theta))
             new_particle = {'x':x, 'y':y,'theta': theta}
-            if not isPaintedOrUnexplored(cspace_matrix,row,column):
+            if not isPaintedOrUnexplored(self.map_no_blur,row,column):
                 new_particles.append(new_particle)
             else:
                 pass
