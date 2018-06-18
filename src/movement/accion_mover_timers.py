@@ -151,8 +151,11 @@ class Move(object):
         #print self.pos
         #print self.ang
         #print ""
+    def call2(self,data):
+        print("bueena",data)
 
     def callback_goal(self,data):
+        print("hola")
         if not self.evading:
             goals_list = json.loads(str(data.data))
             # print("nuevas goals: ",goals_list)
@@ -169,7 +172,7 @@ class Move(object):
 
             # print("callback :)")
             # print(self.lista_comandos)
-
+        print(self.goals)
     def absolute_pos(self, pose):
         p_rot = self.rotate((0,0),pose,self.ang)
         theta_abs = pose[2]+self.ang
@@ -281,11 +284,11 @@ class Move(object):
         # if self.goals_cambiados:
         #     self.goals_cambiados = False
 
-        self.const_p_x = 0.4
+        self.const_p_x = 0.8
         self.const_p_theta = 1
 
 
-        self.max_vel_x = 0.1
+        self.max_vel_x = 0.2
         self.min_vel_x = 0.05
 
         self.max_ac_x = 0.5
@@ -295,28 +298,28 @@ class Move(object):
         self.min_vel_theta = 0.05
 
         thres_error_x = 0.02
-        thres_error_theta = 3.0/180.0*math.pi #5 grados.
+        thres_error_theta = 10.0/180.0*math.pi #10 grados.
 
         if self.robot_state == self.MODE_MOVE1:
             #error con pose absoluta.
             # try:
-            error = self.calculate_error(self.goals[0][0],self.goals[0][1]) #retorna tupla (error_x,error_theta,error_y)
-            # except:
-            # self.robot_state = self.MODE_STILL
-            # return
-            # print(error)
-            # print("")
+            error = self.calculate_error(self.goals[0][0],self.goals[0][1]) #retorna tupla (error_x,error_y,error_theta)
 
             #Solo consideramos el error en x y el error de mi theta actual comparado
             #con mi angulo hacia el objetivo.
             vel_x = error[0]*self.const_p_x
             vel_theta = error[2]*self.const_p_theta
 
-            if vel_x > self.max_vel_x:
-                vel_x = self.max_vel_x
+            print("vel_x",vel_x)
+
+            if abs(vel_x) > self.max_vel_x:
+                if vel_x > 0:
+                    vel_x = self.max_vel_x
+                else:
+                    vel_x = -self.max_vel_x
             # elif error[0] < thres_error_x:
             #     vel_x = 0
-            elif abs(error[0]) > thres_error_x and vel_x < self.min_vel_x:
+            elif abs(error[0]) > thres_error_x and abs(vel_x) < self.min_vel_x:
                 if vel_x < 0:
                     vel_x = -self.min_vel_x
                 else:
@@ -326,7 +329,7 @@ class Move(object):
                     vel_theta = -self.max_vel_theta
                 else:
                     vel_theta = self.max_vel_theta
-            elif abs(error[1]) > thres_error_theta and abs(vel_theta) < self.min_vel_theta:
+            elif abs(error[2]) > thres_error_theta and abs(vel_theta) < self.min_vel_theta:
                 if vel_theta < 0:
                     vel_theta = -self.min_vel_theta
                 else:
@@ -337,69 +340,73 @@ class Move(object):
             # if error[1] < thres_error_theta:
             #     vel_theta = 0
 
-            if abs(error[0]) < thres_error_x and abs(error[2]) < thres_error_theta:
-                vel_theta = 0
-                # self.goals_list.pop(0)
-                self.robot_state = self.MODE_MOVE2
-
-        elif self.robot_state == self.MODE_MOVE2:
-            ##ejecutar movimiento para llegar a pose theta
-            # print(self.goals)
-            error_theta = self.goals[0][1][2]-self.ang
-            if error_theta > math.pi:
-                error_theta = -(2*math.pi - error_theta)
-            elif error_theta < -math.pi:
-                error_theta = 2*math.pi + error_theta
-
-            # print(abs(error_theta), thres_error_theta)
-            # print("Error theta: ",error_theta)
-
-            vel_x = 0
-            vel_theta = error_theta*self.const_p_theta
-
-            if abs(vel_theta) > self.max_vel_theta:
-                if vel_theta < 0:
-                    vel_theta = -self.max_vel_theta
-                else:
-                    vel_theta = self.max_vel_theta
-            elif abs(error_theta) > thres_error_theta and abs(vel_theta) < self.min_vel_theta:
-                if vel_theta < 0:
-                    vel_theta = -self.min_vel_theta
-                else:
-                    vel_theta = self.min_vel_theta
-            elif abs(error_theta) < thres_error_theta:
+            if abs(error[0]) < thres_error_x and abs(error[1]) < thres_error_x:# and abs(error[2]) < thres_error_theta:
+                print("termine goal")
                 vel_theta = 0
                 self.goals.pop(0)
-                # print("Llego a goal")
-                if len(self.goals) > 0:
+                if len(self.goals) == 0:
+                    self.robot_state = self.MODE_STILL
+                else:
                     self.goals[0][1] = self.absolute_pos(self.goals[0][0])
-                self.robot_state = self.MODE_STILL
+                
+        # elif self.robot_state == self.MODE_MOVE2:
+        #     ##ejecutar movimiento para llegar a pose theta
+        #     # print(self.goals)
+        #     error_theta = self.goals[0][1][2]-self.ang
+        #     if error_theta > math.pi:
+        #         error_theta = -(2*math.pi - error_theta)
+        #     elif error_theta < -math.pi:
+        #         error_theta = 2*math.pi + error_theta
+
+        #     # print(abs(error_theta), thres_error_theta)
+        #     # print("Error theta: ",error_theta)
+
+        #     vel_x = 0
+        #     vel_theta = error_theta*self.const_p_theta
+
+        #     if abs(vel_theta) > self.max_vel_theta:
+        #         if vel_theta < 0:
+        #             vel_theta = -self.max_vel_theta
+        #         else:
+        #             vel_theta = self.max_vel_theta
+        #     elif abs(error_theta) > thres_error_theta and abs(vel_theta) < self.min_vel_theta:
+        #         if vel_theta < 0:
+        #             vel_theta = -self.min_vel_theta
+        #         else:
+        #             vel_theta = self.min_vel_theta
+        #     elif abs(error_theta) < thres_error_theta:
+        #         vel_theta = 0
+        #         self.goals.pop(0)
+        #         # print("Llego a goal")
+        #         if len(self.goals) > 0:
+        #             self.goals[0][1] = self.absolute_pos(self.goals[0][0])
+        #         self.robot_state = self.MODE_STILL
 
 
-        if event.last_real != None:
-            time_elapsed = time.time() - event.last_real.to_sec()
+        # if event.last_real != None:
+        #     time_elapsed = time.time() - event.last_real.to_sec()
 
-            ac_x = (vel_x - self.last_vel_x)*1.0/time_elapsed
-            ac_theta = (vel_theta - self.last_vel_theta)*1.0/time_elapsed
+        #     ac_x = (vel_x - self.last_vel_x)*1.0/time_elapsed
+        #     ac_theta = (vel_theta - self.last_vel_theta)*1.0/time_elapsed
 
-            # print(ac_x,ac_theta)
+        #     # print(ac_x,ac_theta)
 
-            if abs(ac_x) > self.max_ac_x:
-                ## velocidades en x son siempre mayor a 0
-                # if vel_x > self.last_vel_x:
-                if ac_x > 0:
-                    vel_x = (self.max_ac_x*time_elapsed) + self.last_vel_x
-                else:
-                    vel_x = (-self.max_ac_x*time_elapsed) + self.last_vel_x
+        #     if abs(ac_x) > self.max_ac_x:
+        #         ## velocidades en x son siempre mayor a 0
+        #         # if vel_x > self.last_vel_x:
+        #         if ac_x > 0:
+        #             vel_x = (self.max_ac_x*time_elapsed) + self.last_vel_x
+        #         else:
+        #             vel_x = (-self.max_ac_x*time_elapsed) + self.last_vel_x
 
-            if abs(ac_theta) > self.max_ac_theta:
-                # if vel_theta < 0:
-                if ac_theta > 0:
-                    vel_theta = self.max_ac_theta*time_elapsed*1.0 + self.last_vel_theta
-                else:
-                    vel_theta = -self.max_ac_theta*time_elapsed*1.0 + self.last_vel_theta
-                # else:
-                    # vel_theta = -self.max_ac_theta*time_elapsed*1.0/(abs(vel_theta) - abs(self.last_vel_theta))
+        #     if abs(ac_theta) > self.max_ac_theta:
+        #         # if vel_theta < 0:
+        #         if ac_theta > 0:
+        #             vel_theta = self.max_ac_theta*time_elapsed*1.0 + self.last_vel_theta
+        #         else:
+        #             vel_theta = -self.max_ac_theta*time_elapsed*1.0 + self.last_vel_theta
+        #         # else:
+        #             # vel_theta = -self.max_ac_theta*time_elapsed*1.0/(abs(vel_theta) - abs(self.last_vel_theta))
 
 
         # print(vel_theta)
