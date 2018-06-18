@@ -2,8 +2,10 @@
 
 import rospy
 import time
+from audio.turtlebot_audio import TurtlebotAudio
 from movement.detector_obstaculo_pasillo import ObstacleDetector
-from movement.accion_mover_timers import Move
+from movement.accion_mover_timers import Move as Move1
+from movement.accion_mover_timers2 import Move as Move_locate
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 import copy
@@ -22,7 +24,9 @@ from localization.c_space import isPainted,paintNeighbours,read_pgm,print_matrix
         
 rospy.init_node("path_finding")
 
-move = Move()
+move_goal = Move1()
+move_locate = Move_locate()
+
 obst = ObstacleDetector()
 
 bottom_left_origin = [0,0]
@@ -32,22 +36,30 @@ path_finding = PathFinding('../../include/map.pgm', bottom_left_origin, resoluti
 rospy.sleep(1)
 
 
-rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
-# rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
+# rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
+rospy.Timer(rospy.Duration(0.03),move_goal.controlled_tick)
+rospy.Timer(rospy.Duration(0.03),move_locate.controlled_tick)
 
 
 #-----------test-------------
-start_pose = {'x':0.5,'y':1.3,'theta':0}
+# start_pose = {'x':0.5,'y':1.3,'theta':0}
 goal_pose = {'x':2.1,'y':0.5,'theta':0}
-nodes = path_finding.findPath(start_pose, goal_pose)
-if nodes is not None:
-    for i in nodes:
-        print(i)
-else:
-    print('Error. nodes no valido:')
+# goals = []
+# nodes = path_finding.findPath(start_pose, goal_pose)
+# if nodes is not None:
+#     for node in nodes:
+#         goals.append({'x':node.x,'y':node.y,'theta':0})
+# else:
+#     print('Error. nodes no valido:')
 
-path_finding.plotPathFound(nodes)
-#-----------------------------
+# path_finding.plotPathFound(nodes)
+# #-----------------------------
+goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=1)
+rospy.sleep(1)
+# print(goals)
+# goals_publisher.publish(String(json.dumps(goals)))
+speaker = TurtlebotAudio()
+
 
 
 # rospy.sleep(1)
@@ -55,24 +67,46 @@ path_finding.plotPathFound(nodes)
 # rospy.Timer(rospy.Duration(0.3), localization.plotParticles)
 # rospy.Timer(rospy.Duration(0.3),localization.timer_located)
 
+aux_audio = False
+isGoing = False
+
 cond_termino = False
 while True and not cond_termino:
     if not path_finding.isLocated:
+        print("not located")
         # Moverse hasta localizarse
+        if not aux_audio:
+            speaker.say('Localizandome')
+            aux_audio = True
+        obst.canPublish = True
         # (Activar timer de move.controlled_tick)
-        pass
+        isGoing = False
     else:
+        # print("located")
+        if aux_audio:
+            speaker.say('Path planning')
+            aux_audio = False
+        
+        obst.canPublish = False
         # Desactivar timer de move.controlled_tick
         if path_finding.location is not None:
             #Hacer path finding
-            start_pose = path_finding.location
-            nodes = path_finding.findPath(start_pose, goal_pose)
-            if not bool(nodes):
-                print('Error. "nodes" no valido:', nodes)
-            else:
-                node = nodes.pop(0)
-                goals = []
-                goals.append({'x': node.x, 'y': node.y, 'theta':0 })
+            print("location",path_finding.location)
+            if not isGoing:
+                isGoing = True
+                start_pose = path_finding.location
+                nodes = path_finding.findPath(start_pose, goal_pose)
+                if not bool(nodes):
+                    print('Error. "nodes" no valido:', nodes)
+                    isGoing = False
+                else:
+                    goals = []
+                    for node in nodes:
+                        goals.append({'x': node.x, 'y': node.y, 'theta':0, 'isGoal':False })
+                    goals[-1]['isGoal'] = True
+                    goals_publisher.publish(String(json.dumps(goals)))
+                    print("PUBLICADO",goals)
+    rospy.sleep(1)
 
 
 rospy.spin()

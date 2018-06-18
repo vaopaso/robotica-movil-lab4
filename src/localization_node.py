@@ -26,8 +26,8 @@ localization = Localization('../../include/map.pgm','../../include/map.yaml',num
 rospy.Subscriber("/scan", LaserScan, localization.callback_scan)
 rospy.Subscriber("/odom", Odometry, localization.odom_callback)
 
-move = Move()
-obst = ObstacleDetector()
+# move = Move()
+# obst = ObstacleDetector()
 
 # goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=1)
 initial_pose_publisher = rospy.Publisher("/initial_pose",String,queue_size=1)
@@ -37,8 +37,8 @@ rospy.Subscriber('/initial_pose',String,localization.initial_pose_callback)
 
 rospy.sleep(1)
 initial_pose_publisher.publish(String(json.dumps(initial_pose)))
-rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
-rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
+# rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
+# rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
 
 rospy.Timer(rospy.Duration(0.3), localization.plotParticles)
 rospy.Timer(rospy.Duration(0.3),localization.timer_located)

@@ -151,6 +151,8 @@ class Move(object):
         if data.pose.pose.orientation.z < 0:
            self.ang = 2*math.pi - self.ang
 
+        self.pose_mapa = {'x':self.pos[0],'y':self.pos[1],'theta':self.ang}
+
         #print self.pos
         #print self.ang
         #print ""
@@ -172,7 +174,7 @@ class Move(object):
 
             # print("callback :)")
             # print(self.lista_comandos)
-        print(self.goals)
+        # print(self.goals)
 
 
     def absolute_pos(self, pose):
@@ -297,11 +299,11 @@ class Move(object):
         # if self.goals_cambiados:
         #     self.goals_cambiados = False
 
-        self.const_p_x = 0.8
-        self.const_p_theta = 1
+        self.const_p_x = 0.4
+        self.const_p_theta = 0.8
 
 
-        self.max_vel_x = 0.2
+        self.max_vel_x = 0.1
         self.min_vel_x = 0.05
 
         self.max_ac_x = 0.5
@@ -310,10 +312,11 @@ class Move(object):
         self.max_vel_theta = 1
         self.min_vel_theta = 0.05
 
-        thres_error_x = 0.02
+        thres_error_x = 0.1
         thres_error_theta = 10.0/180.0*math.pi #10 grados.
 
         if self.robot_state == self.MODE_MOVE1:
+            print("GOAL",self.goals[0])
             #error con pose absoluta.
             # try:
             error = self.calculate_error(self.goals[0]) #retorna tupla (error_x,error_y,error_theta)
@@ -323,7 +326,7 @@ class Move(object):
             vel_x = error[0]*self.const_p_x
             vel_theta = error[2]*self.const_p_theta
 
-            print("vel_x",vel_x)
+            # print("vel_x",vel_x)
 
             if abs(vel_x) > self.max_vel_x:
                 if vel_x > 0:
@@ -354,10 +357,13 @@ class Move(object):
             #     vel_theta = 0
 
             if abs(error[0]) < thres_error_x and abs(error[1]) < thres_error_x:# and abs(error[2]) < thres_error_theta:
-                print("termine goal")
+
+                print("termine goal",self.goals[0])
                 # self.pose_mapa['x'] += 0.2
                 vel_theta = 0
                 self.goals.pop(0)
+                if len(self.goals) > 0:
+                    print("goal actual",self.goals[0])
                 if len(self.goals) == 0:
                     self.robot_state = self.MODE_STILL
                 # else:

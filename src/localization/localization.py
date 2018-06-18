@@ -61,7 +61,7 @@ class Localization:
         self.particle_radius = int(round(0.05/self.display_resolution))
 
         # bajo este score, esta ubicado.
-        self.threshold_located = 0.1
+        self.threshold_located = 0.2
         self.min_score_weighting = math.pow(10,-40)
 
         #no empieza ubicando hasta que reciba particula inicial.
@@ -71,6 +71,7 @@ class Localization:
         self.valid_measure = True
 
         self.avg_particle = None
+        self.num_hardcoded = int(0.1*self.initial_num_particles)
 
     def initial_pose_callback(self,data):
         print("calback")
@@ -96,6 +97,7 @@ class Localization:
     def timer_located(self,event):
         particles = copy.deepcopy(self.particles)
         score = self.score_distance(particles)
+        print("score",score)
         is_located = False
         avg = None
         if score <= self.threshold_located:
@@ -109,14 +111,12 @@ class Localization:
             avg = {'x': avg[0], 'y': avg[1], 'theta': avg[2]}
             self.avg_particle = avg
 
-
         self.is_located_publisher.publish(String(json.dumps(is_located)))
         self.location_publisher.publish(String(json.dumps(avg)))
         
 
     def locate(self):
         '''Tick in charge of the location process'''
-        t_all = time.time()
         self.last_pose = copy.deepcopy(self.pose_robot)
         if self.particles is None or len(self.particles) == 0 :
             #Resampling Inicial
@@ -126,9 +126,11 @@ class Localization:
             self.particles = self.first_generation_particles(self.initial_num_particles,self.cspace_matrix,self.origin,self.resolution)
             # self.particles[-1] = {'x':0.5,'y':1.3,'theta':0}
             if self.avg_particle is not None:
-                self.particles[-1] = copy.deepcopy(self.avg_particle)
+                self.particles[-self.num_hardcoded:] = self.sparse_particle(self.avg_particle,self.num_hardcoded)
+                self.particles[-1] = self.avg_particle
             else:
-                self.particles[-1] = copy.deepcopy(self.initial_pose)
+                self.particles[-self.num_hardcoded:] = self.sparse_particle(self.initial_pose,self.num_hardcoded)
+                self.particles[-1] = self.initial_pose
             print("hice first resampling")
         # input("hola espero")
         #weighting
@@ -254,7 +256,7 @@ class Localization:
         zero_angle_index = ranges_orig.shape[0] //2 
         ranges = ranges_orig[zero_angle_index+self.init_angle:zero_angle_index+self.end_angle+1]
 
-        if len(ranges[ np.where( ranges > 19.0 )]) > len(ranges)*0.2:
+        if len(ranges[ np.where( ranges > 19.0 )]) > len(ranges)*0.3:
             self.valid_measure = False
         else:
             self.valid_measure = True
@@ -512,69 +514,38 @@ class Localization:
         return new_particles
         
 
-        ################################################################
+    def sparse_particle(self,particle,number):
+        particles = []
+        for i in range(number):
+            diff = {'x':0,'y':0,'theta':0}
+            rho, phi = cart2pol(diff['x'], diff['y'])
 
-        # if theta_type == 'rad':
-        #     last_odom['theta'] = last_odom['theta']*180/np.pi
-        #     new_odom['theta'] = new_odom['theta']*180/np.pi
+            # sigma_theta = 0.8
+            # sigma_rho = 1.6
+            # sigma_phi = sigma_rho/7
+            sigma_theta = 0.1 #0.3
+            sigma_rho = 0.05
+            sigma_phi = 0.05
 
-        # diff = {'x': new_odom['x']-last_odom['x'], 'y': new_odom['y']-last_odom['y'], 'theta': new_odom['theta']-last_odom['theta']} 
+            # se "mueven" las particulas segun los modelos de probabilidad
+            extra_theta = 1
+            sample_theta = np.random.normal(diff['theta']*extra_theta, sigma_theta) # giro sobre si mismo
+            sample_rho = np.random.normal(rho, sigma_rho) # distancia lineal recorrida
+            sample_phi = np.random.normal(phi, sigma_phi) # angulo abertura
 
-        
-        # print("diff",diff)
-        # rho, phi = cart2pol(diff['x'], diff['y'])
-        
-        # # sigma_theta = 0.8
-        # # sigma_rho = 1.6
-        # # sigma_phi = sigma_rho/7
-        # sigma_theta = 0.1
-        # sigma_rho = 0.05
-        # sigma_phi = 0.05
-        # size = len(last_particles)
-        
-        # # se "mueven" las particulas segun los modelos de probabilidad
-        # sample_theta = np.random.normal(diff['theta'], sigma_theta, size) # giro sobre si mismo
-        # sample_rho = np.random.normal(rho, sigma_rho, size) # distancia lineal recorrida
-        # sample_phi = np.random.normal(phi, sigma_phi, size) # angulo abertura
+            sample_x, sample_y = pol2cart(sample_rho, sample_phi)
+            x,y = particle['x']+sample_x,particle['y']+sample_y
+            #row,column = mapCoords_to_pixel(x,y,cspace_matrix.shape[0],cspace_matrix.shape[1],self.origin,self.resolution)
 
-        # new_particles = []
-
-        # for i in range(size):
-        #     sample_x, sample_y = pol2cart(sample_rho[i], sample_phi[i])
-        #     x,y = last_particles[i]['x']+sample_x,last_particles[i]['y']+sample_y
-        #     row,column = mapCoords_to_pixel(x,y,cspace_matrix.shape[0],cspace_matrix.shape[1],self.origin,self.resolution)
-        #     theta = (last_particles[i]['theta']+sample_theta[i])%(2*math.pi)
-        #     print("New particle: x: {0}, y: {1}, theta: {2}".format(x,y,theta))
-        #     new_particle = {'x':x, 'y':y,'theta': theta}
-        #     if not isPaintedOrUnexplored(cspace_matrix,row,column):
-        #         new_particles.append(new_particle)
-        #     else:
-        #         pass
-        #         # print("no se puede agregar",new_particle)
-
-        # return new_particles
-
-    # def plotParticles(self,event):
-
-    #     image = copy.deepcopy(self.img)
-        
-    #     if self.particles is not None:
-    #         for particle in self.particles:
-    #             i, j = mapCoords_to_pixel(particle['x'], particle['y'], image.shape[0], image.shape[1] , self.origin, self.display_resolution)
-    #             # print(particle['x'],i,particle['y'],j)
-    #             if isValidPixel(i, j, image.shape[0], image.shape[1]):
-    #                 # draw robot circle
-    #                 cv2.circle(image, (j,i), self.particle_radius, _RED, -1)
-    #                 # draw direction
-    #                 # a = int(round(particle_radius*np.sin(particle['theta'])))
-    #                 # b = int(round(particle_radius*np.cos(particle['theta'])))
-    #                 # cv2.line(image, (j,i), (i-a,j+b), _BLACK, 1)
-
-    #     # Display window
-    #     cv2.namedWindow('Localization', cv2.WINDOW_NORMAL)
-    #     cv2.resizeWindow('Localization', 600,600)
-    #     cv2.startWindowThread()
-    #     cv2.imshow('Localization', image)
+            theta = (particle['theta']+sample_theta)
+            if theta < -math.pi:
+                theta += 2*math.pi
+            elif theta > math.pi:
+                theta -= 2*math.pi
+            
+            particle = {'x':x, 'y':y,'theta': theta}
+            particles.append(particle)
+        return particles
 
     def plotParticles(self, event):
         image = copy.deepcopy(self.img)

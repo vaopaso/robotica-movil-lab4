@@ -23,7 +23,7 @@ class Move(object):
         self.cmd_vel = rospy.Publisher("/cmd_vel_mux/input/navi", Twist, queue_size=5)
 
         rospy.Subscriber("/odom", Odometry, self.odom_callback)
-        rospy.Subscriber("/lista_goals", String, self.callback_goal)
+        rospy.Subscriber("/lista_goals2", String, self.callback_goal)
         # rospy.Subscriber("/walls", String, self.callback_walls)
 
 
