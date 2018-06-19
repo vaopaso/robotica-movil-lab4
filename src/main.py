@@ -1,6 +1,7 @@
 #! usr/bin/env python
 
 import rospy
+import roslib
 import time
 from audio.turtlebot_audio import TurtlebotAudio
 from movement.detector_obstaculo_pasillo import ObstacleDetector
@@ -75,12 +76,14 @@ while True and not cond_termino:
         if not aux_audio:
             speaker.say('Localizandome')
             aux_audio = True
+            rospy.sleep(1)
         obst.canPublish = True
         isGoing = False
     else:
         # print("located")
         if aux_audio:
             speaker.say('Path planning')
+            rospy.sleep(1)
             aux_audio = False
         
         obst.canPublish = False
