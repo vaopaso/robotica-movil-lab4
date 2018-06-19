@@ -8,6 +8,8 @@ import math
 import time
 import json
 import sys
+sys.path.append('../')
+from audio.turtlebot_audio import TurtlebotAudio
 
 class Move(object):
     def __init__(self):
@@ -58,6 +60,8 @@ class Move(object):
         self.evading = False
 
         self.pose_mapa = None # pose del robot en el mapa, segun callback de localizacion
+
+        self.soundplay = TurtlebotAudio()
 
         # self.goals_cambiados = False
 
@@ -161,19 +165,19 @@ class Move(object):
         #print ""
 
     def callback_goal(self,data):
-        print('CALLBACK goals')
+        # print('CALLBACK goals')
         if not self.evading:
             goals_list = json.loads(str(data.data))
             self.goals = []
             for goal in goals_list:
-                goal_mapa = [goal['x'], goal['y'],goal["theta"]]
+                goal_mapa = [goal['x'], goal['y'],goal["theta"],goal['isGoal']]
                 self.goals.append(goal_mapa)
             self.mode = True
             self.robot_state = self.MODE_MOVE1
             self.goals_locate = []
 
     def callback_goals_locate(self,data):
-        print('CALLBACK goals locate')
+        # print('CALLBACK goals locate')
         if not self.evading:
             goals_list = json.loads(str(data.data))
             self.goals_locate = []
@@ -321,7 +325,7 @@ class Move(object):
         if self.robot_state == self.MODE_STILL and len(self.goals_locate) > 0:
             self.robot_state = self.MODE_MOVE3
         
-        if self.robot_state == self.MODE_MOVE3 and len(self.goals) == 0:
+        if self.robot_state == self.MODE_MOVE3 and len(self.goals_locate) == 0:
             self.robot_state = self.MODE_STILL
 
         if len(self.goals) == 0 and len(self.goals_locate) == 0:
@@ -350,7 +354,7 @@ class Move(object):
         thres_error_theta = 3.0/180.0*math.pi #10 grados.
 
         if self.robot_state == self.MODE_MOVE1:
-            print("GOAL",self.goals[0])
+            # print("GOAL",self.goals[0])
             #error con pose absoluta.
             # try:
             error = self.calculate_error(self.goals[0]) #retorna tupla (error_x,error_y,error_theta)
@@ -396,13 +400,17 @@ class Move(object):
 
             if abs(error[0]) < thres_error_x and abs(error[1]) < thres_error_x:# and abs(error[2]) < thres_error_theta:
 
-                print("termine goal",self.goals[0])
+                # print("termine goal",self.goals[0])
                 # self.pose_mapa['x'] += 0.2
                 vel_theta = 0
+                isGoal = self.goals[0][3]
                 self.goals.pop(0)
                 if len(self.goals) > 0:
-                    print("goal actual",self.goals[0])
+                    # print("goal actual",self.goals[0])
+                    pass
                 if len(self.goals) == 0:
+                    if isGoal:
+                        self.soundplay.say('Finished')
                     self.robot_state = self.MODE_STILL
                 # else:
                 #     self.goals[0][1] = self.absolute_pos(self.goals[0][0])

@@ -16,7 +16,16 @@ import json
 from path_finding.data_structure import Matrix
 from path_finding.path_finding import PathFinding
 from localization.c_space import isPainted,paintNeighbours,read_pgm,print_matrix
+import signal
+import sys
 
+import signal
+
+def handlerZ(signum, frame):
+    print('  -->  Ctrl+Z catch. Killing process...')
+    sys.exit()
+
+signal.signal(signal.SIGTSTP, handlerZ)
 
 # from blur_map import callback_scan, first_generation_particles
 # from c_space import c_spce, read_pgm
@@ -58,8 +67,6 @@ rospy.sleep(1)
 # goals_publisher.publish(String(json.dumps(goals)))
 speaker = TurtlebotAudio()
 
-
-
 # rospy.sleep(1)
 
 # rospy.Timer(rospy.Duration(0.3), localization.plotParticles)
@@ -68,10 +75,17 @@ speaker = TurtlebotAudio()
 aux_audio = False
 isGoing = False
 
+
+def handlerZ(signum, frame):
+    print('  -->  Ctrl+Z catch. Killing process...')
+    sys.exit()
+
+signal.signal(signal.SIGTSTP, handlerZ)
+
 cond_termino = False
 while True and not cond_termino:
     if not path_finding.isLocated:
-        print("not located")
+        print("NOT LOCATED")
         # Moverse hasta localizarse
         if not aux_audio:
             speaker.say('Localizandome')
@@ -89,7 +103,7 @@ while True and not cond_termino:
         obst.canPublish = False
         if path_finding.location is not None:
             #Hacer path finding
-            print("location",path_finding.location)
+            print("LOCATED",path_finding.location)
             if not isGoing:
                 isGoing = True
                 start_pose = path_finding.location
@@ -103,7 +117,7 @@ while True and not cond_termino:
                         goals.append({'x': node.x, 'y': node.y, 'theta':0, 'isGoal':False })
                     goals[-1]['isGoal'] = True
                     goals_publisher.publish(String(json.dumps(goals)))
-                    print("PUBLICADO",goals)
+                    # print("PUBLICADO",goals)
     rospy.sleep(1)
 
 

@@ -62,7 +62,7 @@ class Localization:
 
         # bajo este score, esta ubicado.
         self.threshold_located = 0.2
-        self.min_score_weighting = math.pow(10,-40)
+        self.min_score_weighting = 5*math.pow(10,-40)
 
         #no empieza ubicando hasta que reciba particula inicial.
         self.start_locating = False
@@ -138,7 +138,7 @@ class Localization:
         sensors = copy.deepcopy(self.sensors) #se hace freeze del valor de sensors en este minuto.
         sensors,angles = self.get_useful_rays(sensors,self.num_particles)
         valid_measure = copy.deepcopy(self.valid_measure)
-        print("valid measure",valid_measure)
+        # print("valid measure",valid_measure)
 
         # print("sensors")
         
@@ -164,7 +164,7 @@ class Localization:
         # print('Weighting time: {0}ms.'.format(round(1000*(time.time()-t), 2)))
 
         if np.sum(scores)>0 and len(scores)>0:# and max(scores) > self.min_score_weighting:
-            print("max score",max(scores))
+            # print("max score",max(scores))
             if not valid_measure or max(scores) > self.min_score_weighting:
                 scores = scores/np.sum(scores)
                 #resampling
@@ -172,10 +172,10 @@ class Localization:
                 self.particles = self.resampling(self.num_particles,self.cspace_matrix,scores,self.particles)
                 # self.last_pose = copy.deepcopy(self.pose_robot)
             else:
-                print("mate particulas")
+                # print("mate particulas")
                 self.particles = None
         else:
-            print("mate particulas")
+            # print("mate particulas")
             self.particles = None
             # self.last_pose = copy.deepcopy(self.pose_robot)
 
