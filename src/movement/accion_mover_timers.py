@@ -154,13 +154,14 @@ class Move(object):
         if data.pose.pose.orientation.z < 0:
            self.ang = 2*math.pi - self.ang
 
-        self.pose_mapa = {'x':self.pos[0],'y':self.pos[1],'theta':self.ang}
+        # self.pose_mapa = {'x':self.pos[0],'y':self.pos[1],'theta':self.ang}
 
         #print self.pos
         #print self.ang
         #print ""
 
     def callback_goal(self,data):
+        print('CALLBACK goals')
         if not self.evading:
             goals_list = json.loads(str(data.data))
             self.goals = []
@@ -172,6 +173,7 @@ class Move(object):
             self.goals_locate = []
 
     def callback_goals_locate(self,data):
+        print('CALLBACK goals locate')
         if not self.evading:
             goals_list = json.loads(str(data.data))
             self.goals_locate = []
@@ -269,11 +271,7 @@ class Move(object):
             self.pose_mapa = None
 
     def calculate_error(self, pose_absoluta):
-        # print(pose_real)
-        if type_goal == 'locate':
-            pose_obj = self.relative_pos_locate(pose_absoluta)
-        else:
-            pose_obj = self.relative_pos(pose_absoluta,self.pose_mapa)
+        pose_obj = self.relative_pos(pose_absoluta,self.pose_mapa)
         
         error_x = pose_obj[0]
         error_y = pose_obj[1]
@@ -292,7 +290,7 @@ class Move(object):
         return (error_x, error_y, error_theta )
 
     def calculate_error_locate(self, pose_relativa, pose_absoluta):
-        pose_obj = self.relative_pos(pose_absoluta)
+        pose_obj = self.relative_pos_locate(pose_absoluta)
         error_x = pose_obj[0]
         error_y = pose_obj[1]
         error_theta = self.angle_from_robot(error_x, error_y)
@@ -311,6 +309,8 @@ class Move(object):
         # print("")
         # print(self.robot_state, len(self.goals))
         # print("goal actual: "+self.goals[0])
+        print('goals:',len(self.goals),' goals locate:',len(self.goals_locate), ' robot_state:', self.robot_state)
+        
         if self.robot_state == self.MODE_STILL and len(self.goals) > 0:
             self.robot_state = self.MODE_MOVE1
 
@@ -326,7 +326,6 @@ class Move(object):
 
         if len(self.goals) == 0 and len(self.goals_locate) == 0:
             self.robot_state = self.MODE_STILL
-
 
         vel_x = 0
         vel_theta = 0
@@ -348,7 +347,7 @@ class Move(object):
         self.min_vel_theta = 0.05
 
         thres_error_x = 0.1
-        thres_error_theta = 10.0/180.0*math.pi #10 grados.
+        thres_error_theta = 3.0/180.0*math.pi #10 grados.
 
         if self.robot_state == self.MODE_MOVE1:
             print("GOAL",self.goals[0])
@@ -360,6 +359,8 @@ class Move(object):
             #con mi angulo hacia el objetivo.
             vel_x = error[0]*self.const_p_x
             vel_theta = error[2]*self.const_p_theta
+
+            # print(vel_x, vel_theta)
 
             # print("vel_x",vel_x)
 
@@ -385,6 +386,8 @@ class Move(object):
                     vel_theta = -self.min_vel_theta
                 else:
                     vel_theta = self.min_vel_theta
+
+            # print(vel_x, vel_theta)
 
             # if error[0] < thres_error_x:
             #     vel_x = 0

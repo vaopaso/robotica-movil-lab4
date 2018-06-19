@@ -23,7 +23,7 @@ from localization.c_space import isPainted,paintNeighbours,read_pgm,print_matrix
 rospy.init_node("movement_test")
 
 move = Move()
-obst = ObstacleDetector()
+# obst = ObstacleDetector()
 
 bottom_left_origin = [0,0]
 resolution = 0.1
