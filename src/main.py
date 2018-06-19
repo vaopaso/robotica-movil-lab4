@@ -4,8 +4,7 @@ import rospy
 import time
 from audio.turtlebot_audio import TurtlebotAudio
 from movement.detector_obstaculo_pasillo import ObstacleDetector
-from movement.accion_mover_timers import Move as Move1
-from movement.accion_mover_timers2 import Move as Move_locate
+from movement.accion_mover_timers import Move as Move
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 import copy
@@ -24,8 +23,7 @@ from localization.c_space import isPainted,paintNeighbours,read_pgm,print_matrix
         
 rospy.init_node("path_finding")
 
-move_goal = Move1()
-move_locate = Move_locate()
+move = Move()
 
 obst = ObstacleDetector()
 
@@ -37,8 +35,7 @@ rospy.sleep(1)
 
 
 # rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
-rospy.Timer(rospy.Duration(0.03),move_goal.controlled_tick)
-rospy.Timer(rospy.Duration(0.03),move_locate.controlled_tick)
+rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
 
 
 #-----------test-------------
@@ -79,7 +76,6 @@ while True and not cond_termino:
             speaker.say('Localizandome')
             aux_audio = True
         obst.canPublish = True
-        # (Activar timer de move.controlled_tick)
         isGoing = False
     else:
         # print("located")
@@ -88,7 +84,6 @@ while True and not cond_termino:
             aux_audio = False
         
         obst.canPublish = False
-        # Desactivar timer de move.controlled_tick
         if path_finding.location is not None:
             #Hacer path finding
             print("location",path_finding.location)

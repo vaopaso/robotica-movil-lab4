@@ -21,7 +21,7 @@ class ObstacleDetector(object):
         self.current_cv_depth_image = np.zeros((1, 1))
         # self.publisher = rospy.Publisher("/walls", String, queue_size=1)
         self.__depth_img = rospy.Subscriber('/camera/depth/image_raw', Image, self.__depth_handler)
-        self.goals_publisher = rospy.Publisher("/lista_goals2", String, queue_size=1)
+        self.goals_publisher = rospy.Publisher("/lista_goals_locate", String, queue_size=1)
         self.canPublish = False
 
     def __depth_handler(self,data):
