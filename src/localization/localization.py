@@ -100,7 +100,7 @@ class Localization:
     def timer_located(self,event):
         particles = copy.deepcopy(self.particles)
         score = self.score_distance(particles)
-        print("score",score)
+        # print("score",score)
         is_located = False
         avg = None
         if score <= self.threshold_located:
@@ -120,10 +120,6 @@ class Localization:
 
     def locate(self):
         '''Tick in charge of the location process'''
-        self.last_pose = copy.deepcopy(self.pose_robot)
-        sensors = copy.deepcopy(self.sensors) #se hace freeze del valor de sensors en este minuto.
-        sensors,angles = self.get_useful_rays(sensors,self.num_particles)
-        valid_measure = copy.deepcopy(self.valid_measure)
 
         if self.particles is None or len(self.particles) == 0 :
             #Resampling Inicial
@@ -141,23 +137,19 @@ class Localization:
                 self.particles[-num:] = self.sparse_particle(self.avg_particle,num)
                 self.particles[-1] = self.avg_particle
             else:
+                self.num_particles = self.initial_num_particles
                 self.particles = self.sparse_particle(self.initial_pose,self.initial_num_particles)
                 self.particles[-1] = self.initial_pose
             print("hice first resampling")
         # input("hola espero")
         #weighting
+        self.last_pose = copy.deepcopy(self.pose_robot)
+        sensors = copy.deepcopy(self.sensors) #se hace freeze del valor de sensors en este minuto.
+        sensors,angles = self.get_useful_rays(sensors,self.num_particles)
+        print("sensors:",len(sensors),"angles:",len(angles))
+        valid_measure = copy.deepcopy(self.valid_measure)
         
-        
-        # print("valid measure",valid_measure)
-
-        # print("sensors")
-        
-        # print("sensors_shape",sensors.shape)
-        # print("angle_shape",angles.shape)
-        # print_matrix(self.sensors.round(2))
-        # print("")
-
-        t = time.time()
+        # t = time.time()
         # print("weighting")
         scores = []
         for particle in self.particles:
@@ -238,8 +230,8 @@ class Localization:
         # print("maximo_rays",num_max_rays)
         # num_max_rays = 45
         num_min_rays = 3
-        p1 = (20,num_max_rays)
-        p2 = (300,num_min_rays)
+        p1 = (12,num_max_rays)
+        p2 = (150,num_min_rays)
         m = (p1[1]-p2[1])*1.0/(p1[0]-p2[0])
         num_rayos_func = lambda num_particulas: -m*p2[0]+p2[1]+m*num_particulas
         num_rayos = num_rayos_func(num_particles)
@@ -381,8 +373,8 @@ class Localization:
         # print('score distance:',score)
         #interpolacion
         max_particles = self.initial_num_particles
-        min_particles = 20
-        max_score = 3.5
+        min_particles = 12
+        max_score = 2.5
         min_score = 0.1
         m = (max_particles-min_particles)/(max_score-min_score)
         particles_func = lambda score: max_particles+m*(score-max_score)
@@ -481,7 +473,7 @@ class Localization:
             diff_theta = 2*math.pi + diff_theta
         elif diff_theta > math.pi:
             diff_theta -= 2*math.pi
-        print("diff_theta",diff_theta)
+        # print("diff_theta",diff_theta)
         new_particles = []
         for i in range(len(last_particles)):
             diff = self.absolute_diff(last_odom,new_odom,last_particles[i])
