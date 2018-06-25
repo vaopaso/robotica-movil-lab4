@@ -17,8 +17,18 @@ import numpy as np
 import math
 import json
 
+import signal
+import sys
 
-num_particles = 100
+
+def handlerZ(signum, frame):
+    print('  -->  Ctrl+Z catch. Killing process...')
+    sys.exit()
+
+signal.signal(signal.SIGTSTP, handlerZ)
+
+
+num_particles = 200
 rospy.init_node("localization")
 
 
@@ -31,7 +41,7 @@ rospy.Subscriber("/odom", Odometry, localization.odom_callback)
 
 # goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=1)
 initial_pose_publisher = rospy.Publisher("/initial_pose",String,queue_size=1)
-initial_pose = {'x':0.5,'y':1.3,'theta':0}
+initial_pose = {'x':0.4,'y':2,'theta':0}
 
 rospy.Subscriber('/initial_pose',String,localization.initial_pose_callback)
 
@@ -45,22 +55,10 @@ rospy.Timer(rospy.Duration(0.3),localization.timer_located)
 
 
 cond_termino = False
-while True and not cond_termino:
+while not cond_termino:
     if not localization.start_locating:
         continue
-    # print(localization.sensors)
-    # input("Empezare el locate()")
     localization.locate()
-    #Mover
-    # localization.plotParticles(None)
-    
-    # if localization.particles is not None:
-    #     obst.canMove = True
-    #     # print("estoy esperando")
-    #     # rospy.sleep(4)
-    #     # print("ya no")
-    #     obst.canMove = False
-    
     localization.sampling_process()
 
 # listener que queda esperando y ejecuta los callback cuando corresponda

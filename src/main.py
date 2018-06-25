@@ -19,7 +19,6 @@ from localization.c_space import isPainted,paintNeighbours,read_pgm,print_matrix
 import signal
 import sys
 
-import signal
 
 def handlerZ(signum, frame):
     print('  -->  Ctrl+Z catch. Killing process...')
@@ -49,8 +48,10 @@ rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
 
 
 #-----------test-------------
-# start_pose = {'x':0.5,'y':1.3,'theta':0}
-goal_pose = {'x':2.1,'y':0.5,'theta':0}
+# start_pose = {'x':1.3,'y':2,'theta':-math.pi}
+# goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=1)
+
+goal_pose = {'x':2.0,'y':0.4,'theta':0}
 # goals = []
 # nodes = path_finding.findPath(start_pose, goal_pose)
 # if nodes is not None:
@@ -76,19 +77,13 @@ aux_audio = False
 isGoing = False
 
 
-def handlerZ(signum, frame):
-    print('  -->  Ctrl+Z catch. Killing process...')
-    sys.exit()
-
-signal.signal(signal.SIGTSTP, handlerZ)
-
 cond_termino = False
 while True and not cond_termino:
     if not path_finding.isLocated:
         print("NOT LOCATED")
         # Moverse hasta localizarse
         if not aux_audio:
-            speaker.say('Localizandome')
+            speaker.say('Locating')
             aux_audio = True
             rospy.sleep(1)
         obst.canPublish = True
@@ -108,6 +103,7 @@ while True and not cond_termino:
                 isGoing = True
                 start_pose = path_finding.location
                 nodes = path_finding.findPath(start_pose, goal_pose)
+                
                 if not bool(nodes):
                     print('Error. "nodes" no valido:', nodes)
                     isGoing = False
@@ -115,8 +111,9 @@ while True and not cond_termino:
                     goals = []
                     for node in nodes:
                         goals.append({'x': node.x, 'y': node.y, 'theta':0, 'isGoal':False })
+                    print(goals)
                     goals[-1]['isGoal'] = True
-                    goals_publisher.publish(String(json.dumps(goals)))
+                    goals_publisher.publish(String(json.dumps(goals[2:])))
                     # print("PUBLICADO",goals)
     rospy.sleep(1)
 

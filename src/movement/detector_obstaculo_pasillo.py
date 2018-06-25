@@ -89,7 +89,7 @@ class ObstacleDetector(object):
             y = 0
 
         if minval_left == 10000 or minval_right == 10000:
-            x = -250
+            x = -850
             y = 0
 
         # print("Goal: ", x, y)

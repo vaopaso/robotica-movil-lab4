@@ -50,6 +50,9 @@ class Localization:
         self.cspace_matrix = copy.deepcopy(self.map_no_blur)
         self.c_space(self.map_no_blur,self.cspace_matrix, radius=radius)
 
+        self.cspace_matrix2 = copy.deepcopy(self.map_no_blur)
+        self.c_space(self.map_no_blur,self.cspace_matrix2, radius=radius*0.5)
+
         self.particles = None
 
         #Display
@@ -61,8 +64,8 @@ class Localization:
         self.particle_radius = int(round(0.05/self.display_resolution))
 
         # bajo este score, esta ubicado.
-        self.threshold_located = 0.2
-        self.min_score_weighting = 5*math.pow(10,-40)
+        self.threshold_located = 0.25
+        self.min_score_weighting = math.pow(10,-34)
 
         #no empieza ubicando hasta que reciba particula inicial.
         self.start_locating = False
@@ -74,7 +77,7 @@ class Localization:
         self.num_hardcoded = int(0.1*self.initial_num_particles)
 
     def initial_pose_callback(self,data):
-        print("calback")
+        print("callback")
         if not self.start_locating:
             print("exito")
             self.initial_pose = json.loads(str(data.data))
@@ -118,26 +121,33 @@ class Localization:
     def locate(self):
         '''Tick in charge of the location process'''
         self.last_pose = copy.deepcopy(self.pose_robot)
+        sensors = copy.deepcopy(self.sensors) #se hace freeze del valor de sensors en este minuto.
+        sensors,angles = self.get_useful_rays(sensors,self.num_particles)
+        valid_measure = copy.deepcopy(self.valid_measure)
+
         if self.particles is None or len(self.particles) == 0 :
             #Resampling Inicial
             # input("first resampling")
-            self.num_particles = self.initial_num_particles
+            
             # self.angles = np.linspace(self.init_angle,self.end_angle,self.end_angle-self.init_angle+1)
-            self.particles = self.first_generation_particles(self.initial_num_particles,self.cspace_matrix,self.origin,self.resolution)
+            # self.particles = self.first_generation_particles(self.initial_num_particles,self.cspace_matrix,self.origin,self.resolution)
+            self.num_particles = int(self.initial_num_particles/4)
+            self.particles = self.sparse_particle(self.initial_pose,int(self.initial_num_particles/4))
             # self.particles[-1] = {'x':0.5,'y':1.3,'theta':0}
             if self.avg_particle is not None:
-                self.particles[-self.num_hardcoded:] = self.sparse_particle(self.avg_particle,self.num_hardcoded)
+                self.num_particles = self.initial_num_particles
+                self.particles = self.first_generation_particles(self.initial_num_particles,self.cspace_matrix,self.origin,self.resolution)
+                num = int(self.num_hardcoded)
+                self.particles[-num:] = self.sparse_particle(self.avg_particle,num)
                 self.particles[-1] = self.avg_particle
             else:
-                self.particles[-self.num_hardcoded:] = self.sparse_particle(self.initial_pose,self.num_hardcoded)
+                self.particles = self.sparse_particle(self.initial_pose,self.initial_num_particles)
                 self.particles[-1] = self.initial_pose
             print("hice first resampling")
         # input("hola espero")
         #weighting
         
-        sensors = copy.deepcopy(self.sensors) #se hace freeze del valor de sensors en este minuto.
-        sensors,angles = self.get_useful_rays(sensors,self.num_particles)
-        valid_measure = copy.deepcopy(self.valid_measure)
+        
         # print("valid measure",valid_measure)
 
         # print("sensors")
@@ -477,63 +487,64 @@ class Localization:
             diff = self.absolute_diff(last_odom,new_odom,last_particles[i])
             # print("diff",diff)
             diff = {'x':diff[0],'y':diff[1],'theta':diff[2]}
-            # print('diff_absoluta',diff)
-            rho, phi = cart2pol(diff['x'], diff['y'])
-            
-            # sigma_theta = 0.8
-            # sigma_rho = 1.6
-            # sigma_phi = sigma_rho/7
-            sigma_theta = 0.15 #0.3
-            sigma_rho = 0.05
-            sigma_phi = 0.05
-            
-            # se "mueven" las particulas segun los modelos de probabilidad
-            extra_theta = 1
-            sample_theta = np.random.normal(diff['theta']*extra_theta, sigma_theta) # giro sobre si mismo
-            sample_rho = np.random.normal(rho, sigma_rho) # distancia lineal recorrida
-            sample_phi = np.random.normal(phi, sigma_phi) # angulo abertura
-
-            
-            sample_x, sample_y = pol2cart(sample_rho, sample_phi)
-            x,y = last_particles[i]['x']+sample_x,last_particles[i]['y']+sample_y
-            row,column = mapCoords_to_pixel(x,y,cspace_matrix.shape[0],cspace_matrix.shape[1],self.origin,self.resolution)
-            
-            theta = (last_particles[i]['theta']+sample_theta)
-            if theta < -math.pi:
-                theta += 2*math.pi
-            elif theta > math.pi:
-                theta -= 2*math.pi
-            # print("New particle: x: {0}, y: {1}, theta: {2}".format(x,y,theta))
-            new_particle = {'x':x, 'y':y,'theta': theta}
-            if not isPaintedOrUnexplored(self.map_no_blur,row,column):
-                new_particles.append(new_particle)
+            if diff['x'] < 0.005 and diff['y'] < 0.005 and diff['theta'] < 0.05:
+                new_particles.append(self.sparse_particle(last_particles[i],1)[0])
             else:
-                pass
-                # print("no se puede agregar",new_particle)
+                # print('diff_absoluta',diff)
+                rho, phi = cart2pol(diff['x'], diff['y'])
+                
+                # sigma_theta = 0.8
+                # sigma_rho = 1.6
+                # sigma_phi = sigma_rho/7
+                sigma_theta = 0.15 #0.3
+                sigma_rho = 0.05
+                sigma_phi = 0.05
+                
+                # se "mueven" las particulas segun los modelos de probabilidad
+                extra_theta = 1
+                sample_theta = np.random.normal(diff['theta']*extra_theta, sigma_theta) # giro sobre si mismo
+                sample_rho = np.random.normal(rho, sigma_rho) # distancia lineal recorrida
+                sample_phi = np.random.normal(phi, sigma_phi) # angulo abertura
+
+                
+                sample_x, sample_y = pol2cart(sample_rho, sample_phi)
+                x,y = last_particles[i]['x']+sample_x,last_particles[i]['y']+sample_y
+                row,column = mapCoords_to_pixel(x,y,cspace_matrix.shape[0],cspace_matrix.shape[1],self.origin,self.resolution)
+                
+                theta = (last_particles[i]['theta']+sample_theta)
+                if theta < -math.pi:
+                    theta += 2*math.pi
+                elif theta > math.pi:
+                    theta -= 2*math.pi
+                # print("New particle: x: {0}, y: {1}, theta: {2}".format(x,y,theta))
+                new_particle = {'x':x, 'y':y,'theta': theta}
+                if not isPaintedOrUnexplored(self.cspace_matrix2,row,column):
+                    new_particles.append(new_particle)
+                else:
+                    pass
+                    # print("no se puede agregar",new_particle)
 
         return new_particles
         
-
     def sparse_particle(self,particle,number):
         particles = []
-        for i in range(number):
+        count = 0
+        while count < number:
             diff = {'x':0,'y':0,'theta':0}
-            rho, phi = cart2pol(diff['x'], diff['y'])
 
             # sigma_theta = 0.8
             # sigma_rho = 1.6
             # sigma_phi = sigma_rho/7
-            sigma_theta = 0.1 #0.3
-            sigma_rho = 0.05
-            sigma_phi = 0.05
+            sigma_theta = 0.07 #0.3
+            sigma_x = 0.02
+            sigma_y = 0.02
 
             # se "mueven" las particulas segun los modelos de probabilidad
             extra_theta = 1
             sample_theta = np.random.normal(diff['theta']*extra_theta, sigma_theta) # giro sobre si mismo
-            sample_rho = np.random.normal(rho, sigma_rho) # distancia lineal recorrida
-            sample_phi = np.random.normal(phi, sigma_phi) # angulo abertura
+            sample_x = np.random.normal(diff['x'], sigma_x) # distancia lineal recorrida
+            sample_y = np.random.normal(diff['y'], sigma_y) # angulo abertura
 
-            sample_x, sample_y = pol2cart(sample_rho, sample_phi)
             x,y = particle['x']+sample_x,particle['y']+sample_y
             #row,column = mapCoords_to_pixel(x,y,cspace_matrix.shape[0],cspace_matrix.shape[1],self.origin,self.resolution)
 
@@ -542,11 +553,18 @@ class Localization:
                 theta += 2*math.pi
             elif theta > math.pi:
                 theta -= 2*math.pi
-            
-            particle = {'x':x, 'y':y,'theta': theta}
-            particles.append(particle)
-        return particles
 
+            particle = {'x':x, 'y':y,'theta': theta}
+            width_pixels = self.map.shape[1]
+            height_pixels = self.map.shape[0]
+            row,column = mapCoords_to_pixel(x,y,self.cspace_matrix.shape[0],self.cspace_matrix.shape[1],self.origin,self.resolution)
+            if isValidPixel(row, column, width_pixels, height_pixels):
+                if not isPaintedOrUnexplored(self.cspace_matrix,row,column):
+                    particles.append(particle)
+                    count += 1
+            
+        return particles
+    
     def plotParticles(self, event):
         image = copy.deepcopy(self.img)
         # rad = 0.14 #radio real robot

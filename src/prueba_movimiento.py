@@ -23,7 +23,9 @@ from localization.c_space import isPainted,paintNeighbours,read_pgm,print_matrix
 rospy.init_node("movement_test")
 
 move = Move()
-# obst = ObstacleDetector()
+obst = ObstacleDetector()
+
+obst.canPublish = True
 
 bottom_left_origin = [0,0]
 resolution = 0.1
@@ -32,7 +34,7 @@ resolution = 0.1
 rospy.sleep(1)
 
 
-# rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
+rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
 rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
 
 
@@ -53,17 +55,17 @@ goal_pose = {'x':2.1,'y':0.5,'theta':0}
 #                 goals.append({'x': node.x, 'y': node.y, 'theta':0 })
 
 
-goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=5)
-rospy.sleep(1)
-# rospy.Subscriber("/lista_goals", String, move.callback_goal)
-rospy.sleep(1)
+# goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=5)
+# rospy.sleep(1)
+# # rospy.Subscriber("/lista_goals", String, move.callback_goal)
+# rospy.sleep(1)
 
 
-arista = 1
-move.pose_mapa = {'x':0,'y':0,'theta':0}
-goals_list = json.dumps([{'x': 0.4, 'y': 0.4, 'theta': 0}])
-print("hola")
-goals_publisher.publish(String(goals_list))
+# arista = 1
+# move.pose_mapa = {'x':0,'y':0,'theta':0}
+# goals_list = json.dumps([{'x': 0.4, 'y': 0.4, 'theta': 0}])
+# print("hola")
+# goals_publisher.publish(String(goals_list))
 # print(String(goals_list))
 
 
