@@ -43,7 +43,7 @@ path_finding = PathFinding('../../include/map.pgm', bottom_left_origin, resoluti
 rospy.sleep(1)
 
 
-# rospy.Subscriber("/obstaculos", String, move.callback_obstaculo)
+rospy.Subscriber("/obstacles", String, move.callback_obstacle_path_finding)
 rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
 
 

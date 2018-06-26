@@ -59,6 +59,9 @@ class Move(object):
 
         self.evading = False
 
+        self.avoiding_wall = False
+        self.avoiding_wall_t0 = 0
+
         self.pose_mapa = None # pose del robot en el mapa, segun callback de localizacion
 
         self.soundplay = TurtlebotAudio()
@@ -206,6 +209,16 @@ class Move(object):
         p_rot = self.rotate((0,0),punto,-self.ang)
         return p_rot
 
+    def callback_obstacle_path_finding(self, data):
+        if not self.avoiding_wall:
+            self.avoiding_wall = True
+            goal_obstacle = json.loads(str(data.data))[0]
+            goal_obstacle = [goal_obstacle['x'], goal_obstacle['y'],goal_obstacle["theta"],goal_obstacle['isGoal']]
+            self.goals.insert(0, goal_obstacle) 
+            self.avoiding_wall_t0 = time.time()
+            self.robot_state = self.MODE_MOVE1
+            self.goals_locate = []
+
     def callback_obstaculo(self, data):
         res = str(data.data)
         booleano = res.split("_")[0]
@@ -213,6 +226,7 @@ class Move(object):
         self.comandos_anteriores_obst.append(res)
         self.comandos_anteriores_obst.pop(0)
 
+        # filtro de suavidad
         if all(self.comandos_anteriores_obst[0] == val for val in self.comandos_anteriores_obst):
             res = self.comandos_anteriores_obst[0]
             booleano = res.split("_")[0]
@@ -307,6 +321,13 @@ class Move(object):
         return (error_x, error_y, error_theta )
 
     def controlled_tick(self, event):
+
+        if self.avoiding_wall:
+            t_elapsed = time.time() - self.avoiding_wall_t0
+            if t_elapsed > 0.6:
+                self.avoiding_wall_t0 = 0
+                self.avoiding_wall = False
+                self.goals.pop(0)
 
         # print(self.pos)
         # print(self.ang)
@@ -405,6 +426,9 @@ class Move(object):
                 vel_theta = 0
                 isGoal = self.goals[0][3]
                 self.goals.pop(0)
+                if self.avoiding_wall:
+                    self.avoiding_wall = False
+                    self.avoiding_wall_t0 = 0
                 if len(self.goals) > 0:
                     # print("goal actual",self.goals[0])
                     pass

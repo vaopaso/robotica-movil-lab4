@@ -22,13 +22,15 @@ class ObstacleDetector(object):
         # self.publisher = rospy.Publisher("/walls", String, queue_size=1)
         self.__depth_img = rospy.Subscriber('/camera/depth/image_raw', Image, self.__depth_handler)
         self.goals_publisher = rospy.Publisher("/lista_goals_locate", String, queue_size=1)
+        self.obstacle_publisher = rospy.Publisher("/obstacles", String, queue_size=1)
         self.canPublish = False
 
     def __depth_handler(self,data):
         try:
             self.current_cv_depth_image = np.asarray(self.bridge.imgmsg_to_cv(data, "32FC1"))
-            if self.canPublish:
-                self.publish_obs()
+            # if self.canPublish:
+            #     self.publish_obs()
+            self.publish_obs()
 
         except CvBridgeError, e:
             print("error")
@@ -69,9 +71,13 @@ class ObstacleDetector(object):
 
 
         # print(minval_left, minval_right)
+        path_finding_obstacle = False # si va a chocar o no
+        if not self.canPublish:
+            threshold = 570
 
         # solo se publica un goal en caso que algun lado este a menos del threshold
         if minval_left < threshold or minval_right < threshold:
+            path_finding_obstacle = True
             if minval_left < minval_right:
                 x = 800
                 y = -1000
@@ -89,13 +95,17 @@ class ObstacleDetector(object):
             y = 0
 
         if minval_left == 10000 or minval_right == 10000:
+            path_finding_obstacle = True
             x = -850
             y = 0
 
-        # print("Goal: ", x, y)
-        goal = json.dumps([{'x': x*1.0/1000, 'y': y*1.0/1000, 'theta': 0}])
-        # print(goal)
-        self.goals_publisher.publish(String(goal))
+        if self.canPublish: # en caso que pueda publicar al goals_locate (movimiento de localizacion)
+            goal = json.dumps([{'x': x*1.0/1000, 'y': y*1.0/1000, 'theta': 0}])
+            self.goals_publisher.publish(String(goal))
+        else: # en este caso es para el path finding local (para no chocar accidentalmente en path planning)
+            if path_finding_obstacle: # solo publicamos en caso que efectivamente vaya a chocar
+                goal = json.dumps([{'x': x*1.0/1000, 'y': y*1.0/1000, 'theta': 0, 'isGoal': False}])
+                self.obstacle_publisher.publish(String(goal))
 
 
     def shutdown(self):
