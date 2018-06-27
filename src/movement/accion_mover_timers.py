@@ -66,6 +66,8 @@ class Move(object):
 
         self.soundplay = TurtlebotAudio()
 
+        self.arrived = False
+
         # self.goals_cambiados = False
 
 
@@ -256,7 +258,7 @@ class Move(object):
         # print("")
         # print(self.robot_state, len(self.goals))
         # print("goal actual: "+self.goals[0])
-        print('goals:',len(self.goals),' goals locate:',len(self.goals_locate), ' robot_state:', self.robot_state)
+        # print('goals:',len(self.goals),' goals locate:',len(self.goals_locate), ' robot_state:', self.robot_state)
         
         if self.robot_state == self.MODE_STILL and len(self.goals) > 0:
             self.robot_state = self.MODE_MOVE1
@@ -281,20 +283,20 @@ class Move(object):
         #     self.goals_cambiados = False
 
         self.const_p_x = 0.4
-        self.const_p_theta = 0.8
+        self.const_p_theta = 0.6
 
 
         self.max_vel_x = 0.1
         self.min_vel_x = 0.05
 
-        self.max_ac_x = 0.5
-        self.max_ac_theta = 1
+        self.max_ac_x = 0.3
+        self.max_ac_theta = 0.7
 
         self.max_vel_theta = 1
         self.min_vel_theta = 0.05
 
         thres_error_x = 0.3
-        thres_error_theta = 2.0/180.0*math.pi #10 grados.
+        thres_error_theta = 4.0/180.0*math.pi #10 grados.
 
         if self.robot_state == self.MODE_MOVE1:
             # print("GOAL",self.goals[0])
@@ -356,8 +358,9 @@ class Move(object):
                     pass
                 if len(self.goals) == 0:
                     if isGoal:
+                        self.arrived = True
                         self.soundplay.say('Finished')
-                        self.robot_state = self.MODE_MOVE2
+                        self.robot_state = self.MODE_STILL
                     
                     # self.robot_state = self.MODE_STILL
                 # else:
