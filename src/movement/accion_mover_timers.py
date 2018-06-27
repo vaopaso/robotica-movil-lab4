@@ -68,81 +68,9 @@ class Move(object):
 
         # self.goals_cambiados = False
 
-    # def callback_walls(self, data):
-    #     values = json.loads(str(data.data))
-    #     minval_left = values['minval_left']
-    #     minval_right = values['minval_right']
-    #
-    #     print(values) # en centimetros
-    #
-    #     threshold = 600 # solo se publica un goal en caso que algun lado este a menos del threshold
-    #
-    #     print(minval_left < threshold or minval_right < threshold)
-    #
-    #
-    #     if minval_left < threshold or minval_right < threshold:
-    #         diff = minval_left - minval_right
-    #         if diff > 0: # lado izq mayor (mas lejos). Moverse a la izq.
-    #             dir = 1 # dir se multiplicara a la magnitud de la velocidad angular
-    #         else:
-    #             dir = -1
-    #
-    #         x = 25*(math.exp(0.009*diff)-1)
-    #         y = dir*(-25)*(math.exp(0.0085*diff)-1)+2000
-    #
-    #         print('{0}, {1}, {2}'.format(diff, x, y))
-    #
-    #         pose_relativa = [x*1.0/1000, y*1.0/1000, 0]
-    #         # self.goals.append([pose_relativa, self.absolute_pos(pose_relativa)])
-
 
     def angle_from_robot(self,x,y):
         return math.atan2(y,x)
-
-
-    # def move_robot_goal(self, goal_pose):
-    #     y = goal_pose[0]
-    #     x = goal_pose[1]
-    #     theta = goal_pose[2]
-    #     theta_1 = self.angle_from_robot(x,y)
-    #
-    #
-    #     if abs(theta_1 ) < 0.25 and rospy.get_param('is_object_detection_alive'):
-    #         # print(rospy.get_param('is_object_detection_alive'))
-    #         theta_1 = 0
-    #
-    #     theta_2 = theta - theta_1
-    #
-    #     angle_factor = 0.35
-    #     #factor de correccion de angulo
-    #     if theta_1 < 0:
-    #         theta_1 -= angle_factor
-    #     elif theta_1 > 0:
-    #         theta_1 += angle_factor
-    #
-    #
-    #
-    #     angular_vel1 = 1
-    #     angular_vel2 = 1
-    #     linear_vel = 0.2
-    #     angular_t1 = theta_1/angular_vel1
-    #     dist = math.sqrt(x*x + y*y)
-    #     linear_t = dist/linear_vel
-    #
-    #
-    #     angular_t2 = theta_2/angular_vel2
-    #
-    #     if angular_t1 < 0:
-    #         angular_t1 = -angular_t1
-    #         angular_vel1 = -angular_vel1
-    #
-    #     if angular_t2 < 0:
-    #         angular_t2 = -angular_t2
-    #         angular_vel2 = -angular_vel2
-    #
-    #     linear_factor = -0.03 #velocidad angular de correcion al ir derecho
-    #
-    #     return [[0,angular_vel1,angular_t1],[linear_vel,linear_factor,linear_t],[0,angular_vel2,angular_t2]]
 
 
     def stop(self):
@@ -219,53 +147,47 @@ class Move(object):
             self.robot_state = self.MODE_MOVE1
             self.goals_locate = []
 
-    def callback_obstaculo(self, data):
-        res = str(data.data)
-        booleano = res.split("_")[0]
+    # def callback_obstaculo(self, data):
+    #     res = str(data.data)
+    #     booleano = res.split("_")[0]
 
-        self.comandos_anteriores_obst.append(res)
-        self.comandos_anteriores_obst.pop(0)
+    #     self.comandos_anteriores_obst.append(res)
+    #     self.comandos_anteriores_obst.pop(0)
 
-        # filtro de suavidad
-        if all(self.comandos_anteriores_obst[0] == val for val in self.comandos_anteriores_obst):
-            res = self.comandos_anteriores_obst[0]
-            booleano = res.split("_")[0]
-        else:
-            booleano = "False"
+    #     # filtro de suavidad
+    #     if all(self.comandos_anteriores_obst[0] == val for val in self.comandos_anteriores_obst):
+    #         res = self.comandos_anteriores_obst[0]
+    #         booleano = res.split("_")[0]
+    #     else:
+    #         booleano = "False"
 
-        if booleano == "True":
-            # print(res)
-            self.obstacle = False #True
-            self.obstacle_pos = res.split("_")[1]
+    #     if booleano == "True":
+    #         # print(res)
+    #         self.obstacle = False #True
+    #         self.obstacle_pos = res.split("_")[1]
 
-            # ################ PARTE EVASION #############################
-            # self.aux_time_obst = time.time()
-            # self.evade_obstacle(self.obstacle_pos)
-            # ############## FIN EVASION ################################
+    #     else:
+    #         time_turning = 0.6
+    #         if len(self.goals) == 2 and self.aux_time_obst is not None and time.time() - self.aux_time_obst > time_turning:
+    #             self.goals.pop(0)
+    #             self.evading = False
+    #         self.obstacle = False
+    #         self.obstacle_pos = None
 
-            # print(self.goals)
-        else:
-            time_turning = 0.6
-            if len(self.goals) == 2 and self.aux_time_obst is not None and time.time() - self.aux_time_obst > time_turning:
-                self.goals.pop(0)
-                self.evading = False
-            self.obstacle = False
-            self.obstacle_pos = None
-
-    def evade_obstacle(self, obstacle_pos):
-        cte_desvio_y = 2
-        cte_desvio_x = 0.3
-        self.evading = True
-        if len(self.goals) == 1:  # primera vez que ve obstaculo.
-            pose_relativa = [cte_desvio_x, cte_desvio_y, 0]
-            if obstacle_pos == "Left":
-                pose_relativa = [cte_desvio_x, -cte_desvio_y, 0]
-            self.goals = [[pose_relativa, self.absolute_pos(pose_relativa)], [self.relative_pos_locate(self.goals[0][1]),self.goals[0][1]]]
-        else:  # ya vio obstaculo anteriormente.
-            pose_relativa = [cte_desvio_x, cte_desvio_y, 0]
-            if obstacle_pos == "Left":
-                pose_relativa = [cte_desvio_x, -cte_desvio_y, 0]
-            self.goals = [[pose_relativa, self.absolute_pos(pose_relativa)], [self.relative_pos_locate(self.goals[1][1]),self.goals[1][1]]]
+    # def evade_obstacle(self, obstacle_pos):
+    #     cte_desvio_y = 2
+    #     cte_desvio_x = 0.3
+    #     self.evading = True
+    #     if len(self.goals) == 1:  # primera vez que ve obstaculo.
+    #         pose_relativa = [cte_desvio_x, cte_desvio_y, 0]
+    #         if obstacle_pos == "Left":
+    #             pose_relativa = [cte_desvio_x, -cte_desvio_y, 0]
+    #         self.goals = [[pose_relativa, self.absolute_pos(pose_relativa)], [self.relative_pos_locate(self.goals[0][1]),self.goals[0][1]]]
+    #     else:  # ya vio obstaculo anteriormente.
+    #         pose_relativa = [cte_desvio_x, cte_desvio_y, 0]
+    #         if obstacle_pos == "Left":
+    #             pose_relativa = [cte_desvio_x, -cte_desvio_y, 0]
+    #         self.goals = [[pose_relativa, self.absolute_pos(pose_relativa)], [self.relative_pos_locate(self.goals[1][1]),self.goals[1][1]]]
 
 
     def rotate(self,origin, point, angle):
