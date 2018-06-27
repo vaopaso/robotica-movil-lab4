@@ -74,7 +74,7 @@ class Localization:
         self.valid_measure = True
 
         self.avg_particle = None
-        self.num_hardcoded = int(0.1*self.initial_num_particles)
+        self.num_hardcoded = int(0.3*self.initial_num_particles)
 
     def initial_pose_callback(self,data):
         print("callback")
@@ -230,7 +230,7 @@ class Localization:
         # print("maximo_rays",num_max_rays)
         # num_max_rays = 45
         num_min_rays = 3
-        p1 = (12,num_max_rays)
+        p1 = (14,num_max_rays)
         p2 = (150,num_min_rays)
         m = (p1[1]-p2[1])*1.0/(p1[0]-p2[0])
         num_rayos_func = lambda num_particulas: -m*p2[0]+p2[1]+m*num_particulas
@@ -373,7 +373,7 @@ class Localization:
         # print('score distance:',score)
         #interpolacion
         max_particles = self.initial_num_particles
-        min_particles = 12
+        min_particles = 14
         max_score = 2.5
         min_score = 0.1
         m = (max_particles-min_particles)/(max_score-min_score)

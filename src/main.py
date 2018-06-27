@@ -51,7 +51,7 @@ rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
 # start_pose = {'x':1.3,'y':2,'theta':-math.pi}
 # goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=1)
 
-goal_pose = {'x':2.0,'y':0.4,'theta':0}
+goal_pose = [{'x':2.0,'y':0.4,'theta':0},{'x':1.3,'y':2.1,'theta':0}]
 # goals = []
 # nodes = path_finding.findPath(start_pose, goal_pose)
 # if nodes is not None:
@@ -75,10 +75,20 @@ speaker = TurtlebotAudio()
 
 aux_audio = False
 isGoing = False
+arrived = [False for i in range(len(goal_pose))]
 
 
 cond_termino = False
 while True and not cond_termino:
+    print(move.arrived,arrived)
+    if move.arrived:
+        rospy.sleep(5)
+        for i in range(len(arrived)):
+            if not arrived[i]:
+                arrived[i] = True
+                move.arrived = False
+                isGoing = False
+                break
     if not path_finding.isLocated:
         print("NOT LOCATED")
         # Moverse hasta localizarse
@@ -101,20 +111,23 @@ while True and not cond_termino:
             print("LOCATED",path_finding.location)
             if not isGoing:
                 isGoing = True
-                start_pose = path_finding.location
-                nodes = path_finding.findPath(start_pose, goal_pose)
-                
-                if not bool(nodes):
-                    print('Error. "nodes" no valido:', nodes)
-                    isGoing = False
-                else:
-                    goals = []
-                    for node in nodes:
-                        goals.append({'x': node.x, 'y': node.y, 'theta':0, 'isGoal':False })
-                    print(goals)
-                    goals[-1]['isGoal'] = True
-                    goals_publisher.publish(String(json.dumps(goals[2:])))
-                    # print("PUBLICADO",goals)
+                for i in range(len(arrived)):
+                    if not arrived[i]:
+                        start_pose = path_finding.location
+                        nodes = path_finding.findPath(start_pose, goal_pose[i])
+                        
+                        if not bool(nodes):
+                            print('Error. "nodes" no valido:', nodes)
+                            isGoing = False
+                        else:
+                            goals = []
+                            for node in nodes:
+                                goals.append({'x': node.x, 'y': node.y, 'theta':0, 'isGoal':False })
+                            print(goals)
+                            goals[-1]['isGoal'] = True
+                            goals_publisher.publish(String(json.dumps(goals[2:])))
+                            # print("PUBLICADO",goals)
+                        break
     rospy.sleep(1)
 
 
