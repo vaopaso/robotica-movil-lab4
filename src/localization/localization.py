@@ -60,7 +60,7 @@ class Localization:
 
         self.augmentation = 10
         self.display_resolution = self.resolution/self.augmentation
-        self.img = cv2.resize(self.img, (self.img.shape[0]*self.augmentation, self.img.shape[0]*self.augmentation))
+        self.img = cv2.resize(self.img, (self.img.shape[1]*self.augmentation, self.img.shape[0]*self.augmentation))
         self.particle_radius = int(round(0.05/self.display_resolution))
 
         # bajo este score, esta ubicado.
@@ -77,9 +77,9 @@ class Localization:
         self.num_hardcoded = int(0.3*self.initial_num_particles)
 
     def initial_pose_callback(self,data):
-        print("callback")
+        # print("callback")
         if not self.start_locating:
-            print("exito")
+            # print("exito")
             self.initial_pose = json.loads(str(data.data))
             self.start_locating = True     
 
@@ -140,13 +140,13 @@ class Localization:
                 self.num_particles = self.initial_num_particles
                 self.particles = self.sparse_particle(self.initial_pose,self.initial_num_particles)
                 self.particles[-1] = self.initial_pose
-            print("hice first resampling")
+            # print("hice first resampling")
         # input("hola espero")
         #weighting
         self.last_pose = copy.deepcopy(self.pose_robot)
         sensors = copy.deepcopy(self.sensors) #se hace freeze del valor de sensors en este minuto.
         sensors,angles = self.get_useful_rays(sensors,self.num_particles)
-        print("sensors:",len(sensors),"angles:",len(angles))
+        # print("sensors:",len(sensors),"angles:",len(angles))
         valid_measure = copy.deepcopy(self.valid_measure)
         
         # t = time.time()

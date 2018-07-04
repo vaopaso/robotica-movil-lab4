@@ -18,19 +18,29 @@ from path_finding.path_finding import PathFinding
 from localization.c_space import isPainted,paintNeighbours,read_pgm,print_matrix
 import signal
 import sys
+import os
 
 
 def handlerZ(signum, frame):
     print('  -->  Ctrl+Z catch. Killing process...')
     sys.exit()
 
-signal.signal(signal.SIGTSTP, handlerZ)
 
 # from blur_map import callback_scan, first_generation_particles
 # from c_space import c_spce, read_pgm
 
         
 rospy.init_node("path_finding")
+
+def callback_loc(event):
+    os.system('python /home/user/catkin_ws/src/grupo_5/scripts/lab4/localization_node.py')
+
+rospy.Timer(rospy.Duration(0.03),callback_loc,oneshot=True)
+
+rospy.sleep(5)
+print("Start main")
+
+signal.signal(signal.SIGTSTP, handlerZ)
 
 move = Move()
 
@@ -51,7 +61,7 @@ rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
 # start_pose = {'x':1.3,'y':2,'theta':-math.pi}
 # goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=1)
 
-goal_pose = [{'x':2.0,'y':0.4,'theta':0},{'x':1.3,'y':2.1,'theta':0}]
+goal_pose = [{'x':1.2,'y':0.5,'theta':-math.pi/2}]#,{'x':1.3,'y':2.1,'theta':0}]
 # goals = []
 # nodes = path_finding.findPath(start_pose, goal_pose)
 # if nodes is not None:

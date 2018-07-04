@@ -73,7 +73,7 @@ class ObstacleDetector(object):
         # print(minval_left, minval_right)
         path_finding_obstacle = False # si va a chocar o no
         if not self.canPublish:
-            threshold = 570
+            threshold = 400
 
         # solo se publica un goal en caso que algun lado este a menos del threshold
         if minval_left < threshold or minval_right < threshold:
