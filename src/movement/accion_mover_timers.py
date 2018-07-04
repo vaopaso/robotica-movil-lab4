@@ -31,6 +31,7 @@ class Move(object):
         rospy.Subscriber("/location", String, self.locationCallback)
         # rospy.Subscriber("/walls", String, self.callback_walls)
 
+        self.goal_actual_publisher = rospy.Publisher("/goal_actual",String, queue_size=1)
 
         #variables del robot
         #move message para publicar
@@ -298,8 +299,14 @@ class Move(object):
         thres_error_x = 0.3
         thres_error_theta = 4.0/180.0*math.pi #10 grados.
 
+        if len(self.goals) > 0:
+            self.goal_actual_publisher.publish(String(json.dumps(self.goals[0])))
+        elif len(self.goals_locate) > 0:
+            self.goal_actual_publisher.publish(String(json.dumps(self.goals_locate[0])))
+
         if self.robot_state == self.MODE_MOVE1:
             # print("GOAL",self.goals[0])
+            
             #error con pose absoluta.
             # try:
             error = self.calculate_error(self.goals[0]) #retorna tupla (error_x,error_y,error_theta)

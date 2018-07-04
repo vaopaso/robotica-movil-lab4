@@ -36,7 +36,7 @@ class PathFinding:
         #cspace
         radius = 0.2/self.resolution
         self.cspace_matrix = copy.deepcopy(self.mapa)
-        self.c_space(self.mapa,self.cspace_matrix, radius=radius)
+        self.c_space(self.mapa,self.cspace_matrix, radius=radius+1)
 
         rospy.Subscriber('/is_located', String, self.isLocatedCallback)
         rospy.Subscriber('/location', String, self.locationCallback)

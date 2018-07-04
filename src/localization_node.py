@@ -42,7 +42,7 @@ rospy.Subscriber("/odom", Odometry, localization.odom_callback)
 
 # goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=1)
 initial_pose_publisher = rospy.Publisher("/initial_pose",String,queue_size=1)
-initial_pose = {'x':2.9,'y':2.2,'theta':-math.pi/2}
+initial_pose = {'x':2.1,'y':0.5,'theta':math.pi/2}
 
 rospy.Subscriber('/initial_pose',String,localization.initial_pose_callback)
 

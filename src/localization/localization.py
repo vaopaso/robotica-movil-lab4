@@ -36,6 +36,7 @@ class Localization:
 
         self.is_located_publisher = rospy.Publisher("/is_located", String, queue_size=5)
         self.location_publisher = rospy.Publisher("/location", String, queue_size=5)
+        self.goal_actual_subscriber = rospy.Subscriber("/goal_actual",String,self.callback_goal_actual)
 
         self.initial_num_particles = num_particles
         self.num_particles = num_particles
@@ -64,7 +65,7 @@ class Localization:
         self.particle_radius = int(round(0.05/self.display_resolution))
 
         # bajo este score, esta ubicado.
-        self.threshold_located = 0.25
+        self.threshold_located = 0.3
         self.min_score_weighting = math.pow(10,-34)
 
         #no empieza ubicando hasta que reciba particula inicial.
@@ -76,6 +77,13 @@ class Localization:
         self.avg_particle = None
         self.num_hardcoded = int(0.3*self.initial_num_particles)
 
+        self.goal_actual = None
+
+    def callback_goal_actual(self,data):
+        print('llego')
+        self.goal_actual = json.loads(str(data.data))
+        print(self.goal_actual)
+        
     def initial_pose_callback(self,data):
         # print("callback")
         if not self.start_locating:
@@ -313,8 +321,8 @@ class Localization:
         '''
         
         num_made = 0
-        range_x = cspace_matrix.shape[0]*resolution
-        range_y = cspace_matrix.shape[1]*resolution
+        range_x = cspace_matrix.shape[1]*resolution
+        range_y = cspace_matrix.shape[0]*resolution
     
         # robot_positions diccionario con los valores siendo listas de thetas en cada (row,column)
         particles = []
@@ -324,7 +332,7 @@ class Localization:
             x = np.random.uniform(low=origin[0],high=origin[0]+range_x)
             y = np.random.uniform(low=origin[1],high=origin[1]+range_y)
             # TODO: check if that spot is available
-            row,column = mapCoords_to_pixel(x,y,cspace_matrix.shape[0],cspace_matrix.shape[1],origin,resolution)
+            row,column = mapCoords_to_pixel(x,y,cspace_matrix.shape[1],cspace_matrix.shape[0],origin,resolution)
             # print(x,y,row,column)
 
             if not isPaintedOrUnexplored(cspace_matrix,row,column):
@@ -501,7 +509,7 @@ class Localization:
                 
                 sample_x, sample_y = pol2cart(sample_rho, sample_phi)
                 x,y = last_particles[i]['x']+sample_x,last_particles[i]['y']+sample_y
-                row,column = mapCoords_to_pixel(x,y,cspace_matrix.shape[0],cspace_matrix.shape[1],self.origin,self.resolution)
+                row,column = mapCoords_to_pixel(x,y,cspace_matrix.shape[1],cspace_matrix.shape[0],self.origin,self.resolution)
                 
                 theta = (last_particles[i]['theta']+sample_theta)
                 if theta < -math.pi:
@@ -549,7 +557,7 @@ class Localization:
             particle = {'x':x, 'y':y,'theta': theta}
             width_pixels = self.map.shape[1]
             height_pixels = self.map.shape[0]
-            row,column = mapCoords_to_pixel(x,y,self.cspace_matrix.shape[0],self.cspace_matrix.shape[1],self.origin,self.resolution)
+            row,column = mapCoords_to_pixel(x,y,self.cspace_matrix.shape[1],self.cspace_matrix.shape[0],self.origin,self.resolution)
             if isValidPixel(row, column, width_pixels, height_pixels):
                 if not isPaintedOrUnexplored(self.cspace_matrix,row,column):
                     particles.append(particle)
@@ -562,10 +570,23 @@ class Localization:
         # rad = 0.14 #radio real robot
         rad = self.particle_radius*self.display_resolution
 
+        if self.goal_actual is not None:
+            print("Goal actual",self.goal_actual)
+            i, j = mapCoords_to_pixel(self.goal_actual[0], self.goal_actual[1], image.shape[1], image.shape[0] , self.origin, self.display_resolution)
+            cv2.circle(image, (j,i), self.particle_radius, _BLUE, -1)
+        
+        initial_pose = {'x':2.1,'y':0.5,'theta':math.pi/2}
+        i, j = mapCoords_to_pixel(initial_pose['x'], initial_pose['y'], image.shape[1], image.shape[0] , self.origin, self.display_resolution)
+        cv2.circle(image, (j,i), self.particle_radius, _GREEN, -1)
+        goal_pose = {'x':1.2,'y':0.5,'theta':-math.pi/2}
+        i, j = mapCoords_to_pixel(goal_pose['x'], goal_pose['y'], image.shape[1], image.shape[0] , self.origin, self.display_resolution)
+        cv2.circle(image, (j,i), self.particle_radius, _GREEN, -1)
+
+
         if self.particles is not None:
         
             for particle in self.particles:
-                i, j = mapCoords_to_pixel(particle['x'], particle['y'], image.shape[0], image.shape[1] , self.origin, self.display_resolution)
+                i, j = mapCoords_to_pixel(particle['x'], particle['y'], image.shape[1], image.shape[0] , self.origin, self.display_resolution)
                 # print(particle['x'],i,particle['y'],j)
                 if isValidPixel(i, j, image.shape[0], image.shape[1]):
                     # draw robot circle
@@ -577,7 +598,7 @@ class Localization:
                     # x_prima,y_prima = mapCoords_to_pixel(x_prima,y_prima,image.shape[0],image.shape[1],bottom_left_origin,resolution)
                     # y_prima = int(round(particle_radius*np.sin(particle['theta'])))
                     # x_prima = int(round(particle_radius*np.cos(particle['theta'])))
-                    x_prima,y_prima = mapCoords_to_pixel(x_prima,y_prima,image.shape[0],image.shape[1],self.origin,self.display_resolution)
+                    x_prima,y_prima = mapCoords_to_pixel(x_prima,y_prima,image.shape[1],image.shape[0],self.origin,self.display_resolution)
                     cv2.line(image, (j,i), (y_prima,x_prima), _BLACK, 1)
 
         # Display window
