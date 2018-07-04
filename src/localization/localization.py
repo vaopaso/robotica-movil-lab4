@@ -127,8 +127,8 @@ class Localization:
             
             # self.angles = np.linspace(self.init_angle,self.end_angle,self.end_angle-self.init_angle+1)
             # self.particles = self.first_generation_particles(self.initial_num_particles,self.cspace_matrix,self.origin,self.resolution)
-            self.num_particles = int(self.initial_num_particles/4)
-            self.particles = self.sparse_particle(self.initial_pose,int(self.initial_num_particles/4))
+            # self.num_particles = int(self.initial_num_particles/4)
+            # self.particles = self.sparse_particle(self.initial_pose,int(self.initial_num_particles/4))
             # self.particles[-1] = {'x':0.5,'y':1.3,'theta':0}
             if self.avg_particle is not None:
                 self.num_particles = self.initial_num_particles

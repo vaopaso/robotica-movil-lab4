@@ -105,7 +105,7 @@ class ObstacleDetector(object):
         else: # en este caso es para el path finding local (para no chocar accidentalmente en path planning)
             if path_finding_obstacle: # solo publicamos en caso que efectivamente vaya a chocar
                 goal = json.dumps([{'x': x*1.0/1000, 'y': y*1.0/1000, 'theta': 0, 'isGoal': False}])
-                self.obstacle_publisher.publish(String(goal))
+                # self.obstacle_publisher.publish(String(goal))
 
 
     def shutdown(self):

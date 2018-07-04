@@ -290,9 +290,9 @@ class Move(object):
         self.min_vel_x = 0.05
 
         self.max_ac_x = 0.3
-        self.max_ac_theta = 0.7
+        self.max_ac_theta = 0.5
 
-        self.max_vel_theta = 1
+        self.max_vel_theta = 0.6
         self.min_vel_theta = 0.05
 
         thres_error_x = 0.3
