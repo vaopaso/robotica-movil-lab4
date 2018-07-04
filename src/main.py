@@ -61,7 +61,7 @@ rospy.Timer(rospy.Duration(0.03),move.controlled_tick)
 # start_pose = {'x':1.3,'y':2,'theta':-math.pi}
 # goals_publisher = rospy.Publisher("/lista_goals", String, queue_size=1)
 
-goal_pose = [{'x':1.2,'y':0.5,'theta':-math.pi/2}]#,{'x':1.3,'y':2.1,'theta':0}]
+goal_pose = [{'x':1.25,'y':0.5,'theta':-math.pi/2}]#,{'x':1.3,'y':2.1,'theta':0}]
 # goals = []
 # nodes = path_finding.findPath(start_pose, goal_pose)
 # if nodes is not None:

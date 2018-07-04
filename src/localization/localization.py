@@ -80,9 +80,7 @@ class Localization:
         self.goal_actual = None
 
     def callback_goal_actual(self,data):
-        print('llego')
         self.goal_actual = json.loads(str(data.data))
-        print(self.goal_actual)
         
     def initial_pose_callback(self,data):
         # print("callback")
@@ -351,6 +349,9 @@ class Localization:
 
     def score_distance(self, particles):
         '''average euclidean distance between all points.'''
+        if particles is None:
+            return 9999
+
         data = np.zeros([len(particles), 2])
         for i, particle in enumerate(particles):
             data[i, 0] = particle['x']
@@ -575,10 +576,10 @@ class Localization:
             i, j = mapCoords_to_pixel(self.goal_actual[0], self.goal_actual[1], image.shape[1], image.shape[0] , self.origin, self.display_resolution)
             cv2.circle(image, (j,i), self.particle_radius, _BLUE, -1)
         
-        initial_pose = {'x':2.1,'y':0.5,'theta':math.pi/2}
+        initial_pose = {'x':1.9,'y':0.5,'theta':math.pi/2}
         i, j = mapCoords_to_pixel(initial_pose['x'], initial_pose['y'], image.shape[1], image.shape[0] , self.origin, self.display_resolution)
         cv2.circle(image, (j,i), self.particle_radius, _GREEN, -1)
-        goal_pose = {'x':1.2,'y':0.5,'theta':-math.pi/2}
+        goal_pose = {'x':1.25,'y':0.5,'theta':-math.pi/2}
         i, j = mapCoords_to_pixel(goal_pose['x'], goal_pose['y'], image.shape[1], image.shape[0] , self.origin, self.display_resolution)
         cv2.circle(image, (j,i), self.particle_radius, _GREEN, -1)
 

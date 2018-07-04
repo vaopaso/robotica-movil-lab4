@@ -38,6 +38,14 @@ class PathFinding:
         self.cspace_matrix = copy.deepcopy(self.mapa)
         self.c_space(self.mapa,self.cspace_matrix, radius=radius+1)
 
+        # # print cspace matrix
+        # for i in range(self.cspace_matrix.shape[0]):
+        #     row = ""
+        #     for j in range(self.cspace_matrix.shape[1]):
+        #         row += str(self.cspace_matrix[i,j]) + "\t"
+        #     print(row)
+        #     print('')
+
         rospy.Subscriber('/is_located', String, self.isLocatedCallback)
         rospy.Subscriber('/location', String, self.locationCallback)
 
