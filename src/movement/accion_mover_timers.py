@@ -354,15 +354,22 @@ class Move(object):
 
                 # print("termine goal",self.goals[0])
                 # self.pose_mapa['x'] += 0.2
-                vel_theta = 0
+                
                 isGoal = self.goals[0][3]
-                self.goals.pop(0)
-                if self.avoiding_wall:
-                    self.avoiding_wall = False
-                    self.avoiding_wall_t0 = 0
-                if len(self.goals) > 0:
-                    # print("goal actual",self.goals[0])
-                    pass
+                if not isGoal:
+                    vel_theta = 0
+                    self.goals.pop(0)
+                    if self.avoiding_wall:
+                        self.avoiding_wall = False
+                        self.avoiding_wall_t0 = 0
+                else:
+                    if abs(error[0]) < thres_error_x*0.5 and abs(error[1]) < thres_error_x*0.5:
+                        vel_theta = 0
+                        self.goals.pop(0)
+                        if self.avoiding_wall:
+                            self.avoiding_wall = False
+                            self.avoiding_wall_t0 = 0
+                
                 if len(self.goals) == 0:
                     if isGoal:
                         self.arrived = True

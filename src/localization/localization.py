@@ -143,8 +143,8 @@ class Localization:
                 self.particles[-num:] = self.sparse_particle(self.avg_particle,num)
                 self.particles[-1] = self.avg_particle
             else:
-                self.num_particles = self.initial_num_particles
-                self.particles = self.sparse_particle(self.initial_pose,self.initial_num_particles)
+                self.num_particles = self.initial_num_particles//4
+                self.particles = self.sparse_particle(self.initial_pose,self.initial_num_particles//4)
                 self.particles[-1] = self.initial_pose
             # print("hice first resampling")
         # input("hola espero")
@@ -519,7 +519,7 @@ class Localization:
                     theta -= 2*math.pi
                 # print("New particle: x: {0}, y: {1}, theta: {2}".format(x,y,theta))
                 new_particle = {'x':x, 'y':y,'theta': theta}
-                if not isPaintedOrUnexplored(self.cspace_matrix2,row,column):
+                if not isPaintedOrUnexplored(self.map_no_blur,row,column):
                     new_particles.append(new_particle)
                 else:
                     pass
